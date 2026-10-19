@@ -101,4 +101,6 @@
 .tool-portal{padding-inline:0}.portal-content{padding-inline:clamp(24px,6vw,88px)}
 .portal-header,.portal-footer{margin-inline:0;padding-inline:clamp(24px,6vw,88px)}
 @media(max-width:600px){.portal-content,.portal-header,.portal-footer{padding-inline:22px}}
+.portal-content{width:min(100%,1200px)}.portal-tools-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));justify-content:center;gap:18px}.portal-tools-grid .portal-tool-card{justify-self:center;width:min(100%,210px);aspect-ratio:1;margin:0;border-radius:16px}.portal-tools-grid .portal-tool-card img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
+@media(max-width:600px){.portal-tools-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:22px}.portal-tools-grid .portal-tool-card{width:100%;border-radius:14px}}
 }
