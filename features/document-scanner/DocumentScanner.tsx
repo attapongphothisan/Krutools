@@ -1,7 +1,7 @@
 'use client';
 
-import {useEffect,useRef,useState,type ChangeEvent} from 'react';
-import {ArrowLeft,ArrowRight,Camera,FileText,Images,ScanLine,RotateCw,Trash2,LoaderCircle,GripVertical,Crop,ArrowDownToLine} from 'lucide-react';
+import {useEffect,useRef,useState,type ChangeEvent,type TouchEvent} from 'react';
+import {ArrowLeft,Camera,FileText,Images,ScanLine,RotateCw,Trash2,LoaderCircle,GripVertical,Crop,ArrowDownToLine} from 'lucide-react';
 import {Dialog} from '../ui';
 import {DocumentCamera} from './DocumentCamera';
 import {PageAdjustments} from './PageAdjustments';
@@ -16,7 +16,7 @@ import './document-scanner.css';
 const steps=['เพิ่มเอกสาร','ปรับและจัดหน้า','ดาวน์โหลด'];
 
 export function DocumentScanner({onBack}:{onBack:()=>void}) {
- const heading=useRef<HTMLHeadingElement>(null),camera=useRef<HTMLInputElement>(null),picker=useRef<HTMLInputElement>(null),dragged=useRef<string|null>(null);
+ const heading=useRef<HTMLHeadingElement>(null),camera=useRef<HTMLInputElement>(null),picker=useRef<HTMLInputElement>(null),dragged=useRef<string|null>(null),swipeStart=useRef<{x:number;y:number}|null>(null);
  const[cameraOpen,setCameraOpen]=useState(false);
  const[confirmExit,setConfirmExit]=useState(false),[cropId,setCropId]=useState<string|null>(null);
  const[exportOpen,setExportOpen]=useState(false),[exportSettings,setExportSettings]=useState<ExportSettings>(()=>({name:defaultExportName(),format:'combined'}));
@@ -31,6 +31,7 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
  },[]);
  function importImages(event:ChangeEvent<HTMLInputElement>){const files=Array.from(event.currentTarget.files??[]);event.currentTarget.value='';void addFiles(files)}
  function back(){if(pages.length||busy)setConfirmExit(true);else onBack()}
+ function swipePage(event:TouchEvent<HTMLDivElement>){const start=swipeStart.current;swipeStart.current=null;if(!start)return;const dx=event.changedTouches[0].clientX-start.x,dy=event.changedTouches[0].clientY-start.y;if(Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy))return;const next=pages[selectedIndex+(dx<0?1:-1)];if(next)setSelectedId(next.id)}
  const importActions=<div className="document-import-actions">
   <button type="button" className="button" disabled={busy} onClick={()=>setCameraOpen(true)}><Camera size={19}/>{pages.length?'ถ่ายเพิ่ม':'ถ่ายเอกสาร'}</button>
   <button type="button" className="button secondary" disabled={busy} onClick={()=>picker.current?.click()}><Images size={19}/>{pages.length?'เพิ่มรูปจากเครื่อง':'เลือกรูปจากเครื่อง'}</button>
@@ -63,9 +64,9 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
    </section>:<section className="document-workspace" aria-label="จัดหน้าเอกสาร" aria-busy={busy}>
     <div className="document-page-toolbar"><h2>เอกสารของคุณ <span>{pages.length} หน้า</span></h2>{importActions}</div>
     {selected&&<>
-     <div className="document-preview"><PageImage page={selected} label={`ตัวอย่างหน้า ${selectedIndex+1}: ${selected.name}`}/></div>
+     <div className="document-preview" tabIndex={0} aria-label={`หน้า ${selectedIndex+1} จาก ${pages.length}; ปัดซ้ายหรือขวาเพื่อเปลี่ยนหน้า`} onTouchStart={event=>{const touch=event.touches[0];swipeStart.current={x:touch.clientX,y:touch.clientY}}} onTouchEnd={swipePage} onKeyDown={event=>{if(event.key==='ArrowRight'&&pages[selectedIndex+1])setSelectedId(pages[selectedIndex+1].id);if(event.key==='ArrowLeft'&&pages[selectedIndex-1])setSelectedId(pages[selectedIndex-1].id)}}><PageImage page={selected} label={`ตัวอย่างหน้า ${selectedIndex+1}: ${selected.name}`}/></div>
      <div className="document-selected-heading"><strong>หน้า {selectedIndex+1} จาก {pages.length}</strong><span title={selected.name}>{selected.name}</span></div>
-     <p className="muted">{selected.autoAdjusted?'ปรับมุมเอกสารให้ตรงอัตโนมัติแล้ว':'ยังหาขอบอัตโนมัติไม่ได้ ใช้ปรับขอบเพื่อกำหนดหน้ากระดาษ'} · ตรวจข้อความหลังปรับแนวโค้ง</p><PageAdjustments key={`${selected.id}-${selected.sharpness}-${selected.bend}`} page={selected} busy={busy} onApply={(sharpness,bend)=>void setAdjustments(selected.id,sharpness,bend)}/>
+     <p className="muted">{selected.autoAdjusted?'ปรับมุมเอกสารให้ตรงอัตโนมัติแล้ว':'ยังหาขอบอัตโนมัติไม่ได้ ใช้ปรับขอบเพื่อกำหนดหน้ากระดาษ'} · ปรับความคมชัดและแนวโค้งอัตโนมัติ</p><PageAdjustments key={`${selected.id}-${selected.sharpness}-${selected.bend}`} page={selected} busy={busy} onApply={(sharpness,bend)=>void setAdjustments(selected.id,sharpness,bend)}/>
      <fieldset className="document-color-panel" disabled={busy}>
       <legend>โหมดภาพ</legend>
       <div className="document-mode-options">{imageModes.map(mode=><label key={mode.value} className={`document-mode-option ${selected.mode===mode.value?'selected':''}`}><input type="radio" name="document-image-mode" value={mode.value} checked={selected.mode===mode.value} onChange={()=>void setMode(mode.value)}/><span>{mode.label}</span></label>)}</div>
@@ -74,12 +75,10 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
      <div className="document-edit-actions" aria-label="เครื่องมือสำหรับหน้าที่เลือก">
       <button type="button" className="document-back" disabled={busy} onClick={()=>setCropId(selected.id)}><Crop size={17}/>{selected.corners?'แก้ไขขอบ':'ปรับขอบ'}</button>
       <button type="button" className="document-back" disabled={busy} onClick={()=>rotate(selected.id)}><RotateCw size={17}/>หมุน 90°</button>
-      <button type="button" className="document-back" disabled={busy||selectedIndex===0} onClick={()=>move(selected.id,-1)}><ArrowLeft size={17}/>เลื่อนก่อนหน้า</button>
-      <button type="button" className="document-back" disabled={busy||selectedIndex===pages.length-1} onClick={()=>move(selected.id,1)}>เลื่อนถัดไป<ArrowRight size={17}/></button>
       <button type="button" className="document-back document-delete" disabled={busy} onClick={()=>remove(selected.id)}><Trash2 size={17}/>ลบหน้านี้</button>
      </div>
     </>}
-    <p className="document-list-hint">เลือกภาพย่อเพื่อดูแต่ละหน้า ใช้ปุ่มเลื่อนหรือลากภาพย่อเพื่อจัดลำดับ</p>
+    <p className="document-list-hint">ปัดบนเอกสารเพื่อดูหน้าถัดไป แตะภาพย่อเพื่อข้ามหน้า หรือลากภาพย่อเพื่อจัดลำดับ</p>
     <ol className="document-page-list" aria-label="ลำดับหน้าเอกสาร">
      {pages.map((page,index)=><li key={page.id} draggable={!busy} onDragStart={event=>{dragged.current=page.id;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',page.id)}} onDragEnd={()=>{dragged.current=null}} onDragOver={event=>{if(dragged.current&&!busy)event.preventDefault()}} onDrop={event=>{event.preventDefault();const id=dragged.current;dragged.current=null;if(id&&!busy)move(id,index-pages.findIndex(item=>item.id===id))}}>
       <button type="button" className={`document-thumbnail ${selectedId===page.id?'selected':''}`} aria-pressed={selectedId===page.id} aria-label={`เลือกหน้า ${index+1}: ${page.name}`} onClick={()=>setSelectedId(page.id)}>

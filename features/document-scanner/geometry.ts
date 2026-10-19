@@ -59,7 +59,8 @@ export function detectDocument(data:Uint8ClampedArray,width:number,height:number
 // Estimate the vertical displacement of text rows in neighbouring strips.
 // Low-confidence or blank strips keep their original position.
 export function flattenTextCurve(data:Uint8ClampedArray,width:number,height:number,amount:number){
- if(amount<=0||width<100||height<100)return data;
+ if(amount===0||width<100||height<100)return data;
+ const strength=amount<0?.7:Math.max(0,Math.min(1,amount));
  const rows=Math.min(600,height),columns=20,profiles:Array<Float64Array>=[];
  for(let col=0;col<columns;col++){const profile=new Float64Array(rows);for(let y=0;y<rows;y++){const sy=Math.min(height-1,Math.round(y*(height-1)/(rows-1)));let ink=0;for(let sample=0;sample<12;sample++){const x=Math.min(width-1,Math.floor((col+(sample+.5)/12)*width/columns)),i=(sy*width+x)*4;ink+=Math.max(0,190-(.299*data[i]+.587*data[i+1]+.114*data[i+2]))}profile[y]=ink/12}profiles.push(profile)}
  const reference=new Float64Array(rows);for(let y=0;y<rows;y++)reference[y]=(profiles[9][y]+profiles[10][y])/2;
@@ -71,6 +72,6 @@ export function flattenTextCurve(data:Uint8ClampedArray,width:number,height:numb
  const mx=(columns-1)/2,my=smooth.reduce((a,b)=>a+b,0)/columns,slope=smooth.reduce((sum,v,i)=>sum+(i-mx)*(v-my),0)/smooth.reduce((sum,_,i)=>sum+(i-mx)**2,0);
  smooth=smooth.map((v,i)=>v-my-slope*(i-mx));if(Math.max(...smooth)-Math.min(...smooth)<height*.004)return data;
  const out=new Uint8ClampedArray(data.length);
- for(let x=0;x<width;x++){const at=Math.max(0,Math.min(columns-1,x/width*columns-.5)),left=Math.floor(at),fraction=at-left,offset=(smooth[left]*(1-fraction)+smooth[Math.min(columns-1,left+1)]*fraction)*amount;for(let y=0;y<height;y++){const sy=Math.max(0,Math.min(height-1,y+offset)),y0=Math.floor(sy),y1=Math.min(height-1,y0+1),dy=sy-y0,i=(y*width+x)*4;for(let c=0;c<3;c++)out[i+c]=data[(y0*width+x)*4+c]*(1-dy)+data[(y1*width+x)*4+c]*dy;out[i+3]=255}}
+ for(let x=0;x<width;x++){const at=Math.max(0,Math.min(columns-1,x/width*columns-.5)),left=Math.floor(at),fraction=at-left,offset=(smooth[left]*(1-fraction)+smooth[Math.min(columns-1,left+1)]*fraction)*strength;for(let y=0;y<height;y++){const sy=Math.max(0,Math.min(height-1,y+offset)),y0=Math.floor(sy),y1=Math.min(height-1,y0+1),dy=sy-y0,i=(y*width+x)*4;for(let c=0;c<3;c++)out[i+c]=data[(y0*width+x)*4+c]*(1-dy)+data[(y1*width+x)*4+c]*dy;out[i+3]=255}}
  return out;
 }
