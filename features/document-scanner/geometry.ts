@@ -29,6 +29,16 @@ export function warpDocument(data:Uint8ClampedArray,width:number,height:number,c
  return{data:output,width:w,height:h};
 }
 
+function outlineQuad(points:Point[]):Quad|null{
+ const cross=(a:Point,b:Point,c:Point)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x),sorted=points.sort((a,b)=>a.x-b.x||a.y-b.y),lower:Point[]=[],upper:Point[]=[];
+ for(const p of sorted){while(lower.length>1&&cross(lower.at(-2)!,lower.at(-1)!,p)<=0)lower.pop();lower.push(p)}
+ for(const p of [...sorted].reverse()){while(upper.length>1&&cross(upper.at(-2)!,upper.at(-1)!,p)<=0)upper.pop();upper.push(p)}
+ const hull=[...lower.slice(0,-1),...upper.slice(0,-1)];if(hull.length<4)return null;
+ while(hull.length>4){let smallest=Infinity,index=0;for(let i=0;i<hull.length;i++){const area=Math.abs(cross(hull[(i+hull.length-1)%hull.length],hull[i],hull[(i+1)%hull.length]));if(area<smallest){smallest=area;index=i}}hull.splice(index,1)}
+ let start=0;for(let i=1;i<4;i++)if(hull[i].x+hull[i].y<hull[start].x+hull[start].y)start=i;
+ return Array.from({length:4},(_,i)=>hull[(start+i)%4]) as Quad;
+}
+
 // A conservative bright-paper detector. Ambiguous white backgrounds fall back to manual corners.
 export function detectDocument(data:Uint8ClampedArray,width:number,height:number):Quad|null{
  const stride=Math.max(1,Math.ceil(Math.max(width,height)/400)),w=Math.ceil(width/stride),h=Math.ceil(height/stride),gray=new Uint8Array(w*h);
@@ -39,16 +49,17 @@ export function detectDocument(data:Uint8ClampedArray,width:number,height:number
   const seen=new Uint8Array(w*h),queue=new Int32Array(w*h);
   for(let start=0;start<gray.length;start++){
    if(seen[start]||gray[start]<threshold)continue;
-   let end=1,count=0,border=0;queue[0]=start;seen[start]=1;
+   const boundary:Point[]=[];let end=1,count=0,border=0;queue[0]=start;seen[start]=1;
    let tl={x:w,y:h},tr={x:0,y:h},br={x:0,y:0},bl={x:w,y:0};
    for(let q=0;q<end;q++){
     const i=queue[q],x=i%w,y=Math.floor(i/w);count++;
     if(x===0||x===w-1||y===0||y===h-1)border++;
+    if(x===0||y===0||x===w-1||y===h-1||gray[i-1]<threshold||gray[i+1]<threshold||gray[i-w]<threshold||gray[i+w]<threshold)boundary.push({x,y});
     if(x+y<tl.x+tl.y)tl={x,y};if(x-y>tr.x-tr.y)tr={x,y};if(x+y>br.x+br.y)br={x,y};if(y-x>bl.y-bl.x)bl={x,y};
     for(const n of [x>0?i-1:-1,x<w-1?i+1:-1,y>0?i-w:-1,y<h-1?i+w:-1])if(n>=0&&!seen[n]&&gray[n]>=threshold){seen[n]=1;queue[end++]=n}
    }
    const fraction=count/(w*h);if(fraction<.15||fraction>.94||border>Math.min(w,h)*.1)continue;
-   const quad=[tl,tr,br,bl].map(p=>({x:Math.min(1,p.x*stride/(width-1)),y:Math.min(1,p.y*stride/(height-1))})) as Quad;
+   const quad=(outlineQuad(boundary)??[tl,tr,br,bl]).map(p=>({x:Math.min(1,p.x*stride/(width-1)),y:Math.min(1,p.y*stride/(height-1))})) as Quad;
    const area=quad.reduce((a,p,i)=>a+p.x*quad[(i+1)%4].y-quad[(i+1)%4].x*p.y,0)/2;
    if(validQuad(quad)&&area>.18&&fraction/area>.65&&area>bestArea){best=quad;bestArea=area}
   }

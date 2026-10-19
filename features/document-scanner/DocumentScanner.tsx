@@ -33,9 +33,9 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
  function back(){if(pages.length||busy)setConfirmExit(true);else onBack()}
  function swipePage(event:TouchEvent<HTMLDivElement>){const start=swipeStart.current;swipeStart.current=null;if(!start)return;const dx=event.changedTouches[0].clientX-start.x,dy=event.changedTouches[0].clientY-start.y;if(Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy))return;const next=pages[selectedIndex+(dx<0?1:-1)];if(next)setSelectedId(next.id)}
  const importActions=<div className="document-import-actions">
-  <button type="button" className="button" disabled={busy} onClick={()=>{setRetakeId(null);camera.current?.click()}}><Camera size={19}/>{pages.length?'ถ่ายเพิ่ม':'ถ่ายเอกสาร'}</button>
+  <button type="button" className="button" disabled={busy} onClick={()=>{setRetakeId(null);setCameraOpen(true)}}><Camera size={19}/>{pages.length?'ถ่ายเพิ่ม':'ถ่ายเอกสาร'}</button>
   <button type="button" className="button secondary" disabled={busy} onClick={()=>{setRetakeId(null);picker.current?.click()}}><Images size={19}/>{pages.length?'เพิ่มรูปจากเครื่อง':'เลือกรูปจากเครื่อง'}</button>
- <button type="button" className="text-button" disabled={busy} onClick={()=>setCameraOpen(true)}>กล้องถ่ายต่อเนื่อง</button></div>;
+ <button type="button" className="text-button" disabled={busy} onClick={()=>{setRetakeId(null);camera.current?.click()}}>ใช้กล้องโทรศัพท์</button></div>;
 
  return <main className="document-scanner">
   <header className="document-scanner-header">
@@ -66,7 +66,7 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
     {selected&&<>
      <div className="document-preview" tabIndex={0} aria-label={`หน้า ${selectedIndex+1} จาก ${pages.length}; ปัดซ้ายหรือขวาเพื่อเปลี่ยนหน้า`} onTouchStart={event=>{const touch=event.touches[0];swipeStart.current={x:touch.clientX,y:touch.clientY}}} onTouchEnd={swipePage} onKeyDown={event=>{if(event.key==='ArrowRight'&&pages[selectedIndex+1])setSelectedId(pages[selectedIndex+1].id);if(event.key==='ArrowLeft'&&pages[selectedIndex-1])setSelectedId(pages[selectedIndex-1].id)}}><PageImage page={selected} label={`ตัวอย่างหน้า ${selectedIndex+1}: ${selected.name}`}/></div>
      <div className="document-selected-heading"><strong>หน้า {selectedIndex+1} จาก {pages.length}</strong><span title={selected.name}>{selected.name}</span></div>
-     <p className="muted">{selected.autoAdjusted?'ปรับขอบและมุมกระดาษให้ตรงแล้ว · ปัดซ้ายขวาเพื่อดูทุกหน้า':'ไม่พบขอบชัดเจน เก็บภาพเต็มไว้ให้ · แตะปรับขอบหากต้องการ'}</p>
+     <p className="muted">{selected.autoAdjusted?'ปรับมุมกระดาษแล้ว · ระบบช่วยคลี่แนวโค้งเมื่อพบแนวข้อความที่ชัดเจน':'ไม่พบขอบชัดเจน เก็บภาพเต็มไว้ให้ · แตะปรับขอบหากต้องการ'}</p>
      <fieldset className="document-color-panel" disabled={busy}>
       <legend>โหมดภาพ</legend>
       <div className="document-mode-options">{imageModes.map(mode=><label key={mode.value} className={`document-mode-option ${selected.mode===mode.value?'selected':''}`}><input type="radio" name="document-image-mode" value={mode.value} checked={selected.mode===mode.value} onChange={()=>void setMode(mode.value)}/><span>{mode.label}</span></label>)}</div>
@@ -95,7 +95,7 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
    <p className="document-session-note">ภาพเอกสารอยู่เฉพาะในอุปกรณ์นี้ระหว่างใช้งาน<br/>เมื่อออกจากเครื่องมือหรือรีเฟรช งานสแกนจะถูกล้าง</p>
    </>}
   </div>
-  {cameraOpen&&<DocumentCamera onCapture={addFiles} onClose={()=>setCameraOpen(false)} onNative={()=>{setCameraOpen(false);camera.current?.click()}}/>}
+  {cameraOpen&&<DocumentCamera onCapture={addFiles} onClose={()=>setCameraOpen(false)} onNative={()=>{setRetakeId(null);setCameraOpen(false);camera.current?.click()}}/>}
   {cropPage&&<CropEditor key={cropPage.id} page={cropPage} onClose={()=>setCropId(null)} onApply={(corners,result)=>{applyCrop(cropPage.id,corners,result);setCropId(null)}}/>}
   {confirmExit&&<Dialog title="ออกและล้างงานสแกนนี้?" subtitle="ภาพและการจัดหน้าจะถูกล้าง เมื่อกลับมาจะเริ่มงานใหม่" onClose={()=>setConfirmExit(false)}><div className="dialog-footer"><button type="button" className="button secondary" onClick={()=>setConfirmExit(false)}>ทำต่อ</button><button type="button" className="button" onClick={onBack}>ออกและล้างงาน</button></div></Dialog>}
  </main>;

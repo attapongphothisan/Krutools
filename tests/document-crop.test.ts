@@ -26,4 +26,10 @@ describe('document perspective correction',()=>{
   expect(corners![2].x).toBeCloseTo(179/199,2);expect(corners![2].y).toBeCloseTo(134/149,2);
   expect(detectDocument(frame(w,h,()=>[255,255,255,255]),w,h)).toBeNull();
  });
+ it('finds a rotated page from its contour instead of diagonal extrema',()=>{
+  const w=240,h=220,quad:Quad=[{x:.25,y:.08},{x:.9,y:.35},{x:.68,y:.92},{x:.07,y:.67}];
+  const pixels=frame(w,h,(x,y)=>{const p={x:x/(w-1),y:y/(h-1)},inside=quad.every((a,i)=>{const b=quad[(i+1)%4];return(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x)>=0});const value=inside?245:45;return[value,value,value,255]});
+  const found=detectDocument(pixels,w,h);expect(found).not.toBeNull();found!.forEach((p,i)=>expect(Math.hypot(p.x-quad[i].x,p.y-quad[i].y)).toBeLessThan(.035));
+ });
+
 });

@@ -1,4 +1,4 @@
-const CACHE_NAME='kru-tools-pages-v8';
+const CACHE_NAME='kru-tools-pages-v9';
 const BASE=new URL('./',self.registration.scope);
 self.addEventListener('install',event=>{
  event.waitUntil(fetch(new URL('precache.json',BASE)).then(response=>response.json()).then(files=>caches.open(CACHE_NAME).then(cache=>cache.addAll(files.map(file=>new URL(file,BASE).href)))).then(()=>self.skipWaiting()));

@@ -19,7 +19,7 @@ async function readPage(file:File):Promise<DocumentPage>{
   const url=URL.createObjectURL(blob);
   let corners:Quad|null=null,base=url,w=width,h=height;const controller=new AbortController();
   try{const detected=await processCrop(url,'detect',fullFrame(),controller.signal);if(detected.corners){corners=detected.corners;const warped=await processCrop(url,'warp',corners,controller.signal);base=URL.createObjectURL(warped.blob);w=warped.width;h=warped.height}}catch{/* Keep the full original when no reliable outline is available. */}
-  const sharpness=.15,bend=0;let preview=base;try{preview=URL.createObjectURL(await processColor(base,'original',controller.signal,{sharpness,bend}))}catch{}
+  const sharpness=.15,bend=1;let preview=base;try{preview=URL.createObjectURL(await processColor(base,'original',controller.signal,{sharpness,bend}))}catch{}
   return{id:crypto.randomUUID(),name:file.name,source:file,previewUrl:preview,originalUrl:url,colorUrl:base,mode:'original',originalWidth:width,originalHeight:height,corners,width:w,height:h,rotation:0,sharpness,bend,autoAdjusted:!!corners};
  }finally{URL.revokeObjectURL(sourceUrl)}
 }
@@ -96,8 +96,8 @@ export function useDocumentSession(){
   return runProcessing(async(signal,temporary)=>{
    setProgress('กำลังปรับภาพหลังแก้ขอบ…');
    const base=result?URL.createObjectURL(result.blob):page.originalUrl;if(result)temporary.add(base);
-   const preview=URL.createObjectURL(await processColor(base,page.mode,signal,page));if(preview!==base)temporary.add(preview);
-   return current.current.map(item=>item.id===id?{...item,corners,colorUrl:base,previewUrl:preview,width:result?.width??page.originalWidth,height:result?.height??page.originalHeight}:item);
+   const preview=URL.createObjectURL(await processColor(base,page.mode,signal,{...page,bend:result?1:0}));if(preview!==base)temporary.add(preview);
+   return current.current.map(item=>item.id===id?{...item,corners,bend:result?1:0,colorUrl:base,previewUrl:preview,width:result?.width??page.originalWidth,height:result?.height??page.originalHeight}:item);
   });
  }
  function setMode(mode:ImageMode,all=false){
