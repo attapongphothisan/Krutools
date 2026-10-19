@@ -1,10 +1,11 @@
 export type ImageMode='original'|'gray'|'sharp';
 export const imageModes=[{value:'original' as const,label:'สีเดิม'},{value:'gray' as const,label:'ขาวดำ'},{value:'sharp' as const,label:'ขาวดำคมชัด'}];
-export function filterPixels(data:Uint8ClampedArray,width:number,height:number,mode:ImageMode){
+export function filterPixels(data:Uint8ClampedArray,width:number,height:number,mode:ImageMode,sharpness=0){
  const output=new Uint8ClampedArray(data);
+ if(sharpness>0)for(let y=1;y<height-1;y++)for(let x=1;x<width-1;x++){const i=(y*width+x)*4;for(let c=0;c<3;c++){const blur=(data[i-4+c]+data[i+4+c]+data[i-width*4+c]+data[i+width*4+c])/4;output[i+c]=Math.max(0,Math.min(255,data[i+c]+(data[i+c]-blur)*sharpness*2))}}
  if(mode==='original')return output;
  const gray=new Uint8Array(width*height);
- for(let i=0;i<gray.length;i++)gray[i]=Math.round(.299*data[i*4]+.587*data[i*4+1]+.114*data[i*4+2]);
+ for(let i=0;i<gray.length;i++)gray[i]=Math.round(.299*output[i*4]+.587*output[i*4+1]+.114*output[i*4+2]);
  if(mode==='gray'){
   for(let i=0;i<gray.length;i++)output[i*4]=output[i*4+1]=output[i*4+2]=gray[i];
   return output;

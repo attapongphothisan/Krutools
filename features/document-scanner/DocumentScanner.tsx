@@ -3,6 +3,8 @@
 import {useEffect,useRef,useState,type ChangeEvent} from 'react';
 import {ArrowLeft,ArrowRight,Camera,FileText,Images,ScanLine,RotateCw,Trash2,LoaderCircle,GripVertical,Crop,ArrowDownToLine} from 'lucide-react';
 import {Dialog} from '../ui';
+import {DocumentCamera} from './DocumentCamera';
+import {PageAdjustments} from './PageAdjustments';
 import {CropEditor} from './CropEditor';
 import {imageModes} from './color';
 import {PageImage} from './PageImage';
@@ -15,10 +17,11 @@ const steps=['เพิ่มเอกสาร','ปรับและจัด
 
 export function DocumentScanner({onBack}:{onBack:()=>void}) {
  const heading=useRef<HTMLHeadingElement>(null),camera=useRef<HTMLInputElement>(null),picker=useRef<HTMLInputElement>(null),dragged=useRef<string|null>(null);
+ const[cameraOpen,setCameraOpen]=useState(false);
  const[confirmExit,setConfirmExit]=useState(false),[cropId,setCropId]=useState<string|null>(null);
  const[exportOpen,setExportOpen]=useState(false),[exportSettings,setExportSettings]=useState<ExportSettings>(()=>({name:defaultExportName(),format:'combined'}));
  const session=useDocumentSession();
- const {pages,selectedId,setSelectedId,busy,progress,errors,addFiles,remove,rotate,move,applyCrop,setMode,canCancel,cancelProcessing}=session;
+ const {pages,selectedId,setSelectedId,busy,progress,errors,addFiles,remove,rotate,move,applyCrop,setMode,setAdjustments,canCancel,cancelProcessing}=session;
  const cropPage=pages.find(page=>page.id===cropId);
  const selectedIndex=pages.findIndex(page=>page.id===selectedId),selected=pages[selectedIndex];
  useEffect(()=>{
@@ -29,7 +32,7 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
  function importImages(event:ChangeEvent<HTMLInputElement>){const files=Array.from(event.currentTarget.files??[]);event.currentTarget.value='';void addFiles(files)}
  function back(){if(pages.length||busy)setConfirmExit(true);else onBack()}
  const importActions=<div className="document-import-actions">
-  <button type="button" className="button" disabled={busy} onClick={()=>camera.current?.click()}><Camera size={19}/>{pages.length?'ถ่ายเพิ่ม':'ถ่ายเอกสาร'}</button>
+  <button type="button" className="button" disabled={busy} onClick={()=>setCameraOpen(true)}><Camera size={19}/>{pages.length?'ถ่ายเพิ่ม':'ถ่ายเอกสาร'}</button>
   <button type="button" className="button secondary" disabled={busy} onClick={()=>picker.current?.click()}><Images size={19}/>{pages.length?'เพิ่มรูปจากเครื่อง':'เลือกรูปจากเครื่อง'}</button>
  </div>;
 
@@ -62,6 +65,7 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
     {selected&&<>
      <div className="document-preview"><PageImage page={selected} label={`ตัวอย่างหน้า ${selectedIndex+1}: ${selected.name}`}/></div>
      <div className="document-selected-heading"><strong>หน้า {selectedIndex+1} จาก {pages.length}</strong><span title={selected.name}>{selected.name}</span></div>
+     <p className="muted">{selected.autoAdjusted?'ปรับมุมเอกสารให้ตรงอัตโนมัติแล้ว':'ยังหาขอบอัตโนมัติไม่ได้ ใช้ปรับขอบเพื่อกำหนดหน้ากระดาษ'} · ตรวจข้อความหลังปรับแนวโค้ง</p><PageAdjustments key={`${selected.id}-${selected.sharpness}-${selected.bend}`} page={selected} busy={busy} onApply={(sharpness,bend)=>void setAdjustments(selected.id,sharpness,bend)}/>
      <fieldset className="document-color-panel" disabled={busy}>
       <legend>โหมดภาพ</legend>
       <div className="document-mode-options">{imageModes.map(mode=><label key={mode.value} className={`document-mode-option ${selected.mode===mode.value?'selected':''}`}><input type="radio" name="document-image-mode" value={mode.value} checked={selected.mode===mode.value} onChange={()=>void setMode(mode.value)}/><span>{mode.label}</span></label>)}</div>
@@ -83,11 +87,12 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
       </button>
      </li>)}
     </ol>
-    <div className="document-export-entry"><button type="button" className="button" disabled={busy} onClick={()=>{setExportOpen(true);window.scrollTo({top:0})}}><ArrowDownToLine size={18}/>ดูตัวอย่าง PDF</button></div>
+    <div className="document-export-entry"><button type="button" className="button" disabled={busy} onClick={()=>{setExportOpen(true);window.scrollTo({top:0})}}><ArrowDownToLine size={18}/>ดูตัวอย่างและส่งออก</button></div>
    </section>}
    <p className="document-session-note">ภาพเอกสารอยู่เฉพาะในอุปกรณ์นี้ระหว่างใช้งาน<br/>เมื่อออกจากเครื่องมือหรือรีเฟรช งานสแกนจะถูกล้าง</p>
    </>}
   </div>
+  {cameraOpen&&<DocumentCamera onCapture={addFiles} onClose={()=>setCameraOpen(false)} onNative={()=>{setCameraOpen(false);camera.current?.click()}}/>}
   {cropPage&&<CropEditor key={cropPage.id} page={cropPage} onClose={()=>setCropId(null)} onApply={(corners,result)=>{applyCrop(cropPage.id,corners,result);setCropId(null)}}/>}
   {confirmExit&&<Dialog title="ออกและล้างงานสแกนนี้?" subtitle="ภาพและการจัดหน้าจะถูกล้าง เมื่อกลับมาจะเริ่มงานใหม่" onClose={()=>setConfirmExit(false)}><div className="dialog-footer"><button type="button" className="button secondary" onClick={()=>setConfirmExit(false)}>ทำต่อ</button><button type="button" className="button" onClick={onBack}>ออกและล้างงาน</button></div></Dialog>}
  </main>;

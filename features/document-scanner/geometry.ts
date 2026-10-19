@@ -55,3 +55,22 @@ export function detectDocument(data:Uint8ClampedArray,width:number,height:number
  }
  return best;
 }
+
+// Estimate the vertical displacement of text rows in neighbouring strips.
+// Low-confidence or blank strips keep their original position.
+export function flattenTextCurve(data:Uint8ClampedArray,width:number,height:number,amount:number){
+ if(amount<=0||width<100||height<100)return data;
+ const rows=Math.min(600,height),columns=20,profiles:Array<Float64Array>=[];
+ for(let col=0;col<columns;col++){const profile=new Float64Array(rows);for(let y=0;y<rows;y++){const sy=Math.min(height-1,Math.round(y*(height-1)/(rows-1)));let ink=0;for(let sample=0;sample<12;sample++){const x=Math.min(width-1,Math.floor((col+(sample+.5)/12)*width/columns)),i=(sy*width+x)*4;ink+=Math.max(0,190-(.299*data[i]+.587*data[i+1]+.114*data[i+2]))}profile[y]=ink/12}profiles.push(profile)}
+ const reference=new Float64Array(rows);for(let y=0;y<rows;y++)reference[y]=(profiles[9][y]+profiles[10][y])/2;
+ const limit=Math.max(2,Math.round(rows*.08)),shifts=new Float64Array(columns),reliable=new Uint8Array(columns);
+ for(let col=0;col<columns;col++){let best=0,bestShift=0;for(let shift=-limit;shift<=limit;shift++){let ab=0,aa=0,bb=0;for(let y=Math.round(rows*.12);y<rows*.88;y++){const a=reference[y],b=profiles[col][y+shift]??0;ab+=a*b;aa+=a*a;bb+=b*b}const score=ab/Math.sqrt(aa*bb||1)-Math.abs(shift)*.002;if(score>best){best=score;bestShift=shift}}if(best>.55){shifts[col]=bestShift*height/rows;reliable[col]=1}}
+ const valid=Array.from(reliable,(_,i)=>i).filter(i=>reliable[i]);if(valid.length<6)return data;
+ for(let i=0;i<columns;i++)if(!reliable[i]){const left=valid.filter(v=>v<i).at(-1)??valid[0],right=valid.find(v=>v>i)??valid[valid.length-1];shifts[i]=left===right?shifts[left]:shifts[left]+(shifts[right]-shifts[left])*(i-left)/(right-left)}
+ let smooth=Array.from(shifts);for(let pass=0;pass<3;pass++)smooth=smooth.map((v,i)=>(smooth[Math.max(0,i-1)]+2*v+smooth[Math.min(columns-1,i+1)])/4);
+ const mx=(columns-1)/2,my=smooth.reduce((a,b)=>a+b,0)/columns,slope=smooth.reduce((sum,v,i)=>sum+(i-mx)*(v-my),0)/smooth.reduce((sum,_,i)=>sum+(i-mx)**2,0);
+ smooth=smooth.map((v,i)=>v-my-slope*(i-mx));if(Math.max(...smooth)-Math.min(...smooth)<height*.004)return data;
+ const out=new Uint8ClampedArray(data.length);
+ for(let x=0;x<width;x++){const at=Math.max(0,Math.min(columns-1,x/width*columns-.5)),left=Math.floor(at),fraction=at-left,offset=(smooth[left]*(1-fraction)+smooth[Math.min(columns-1,left+1)]*fraction)*amount;for(let y=0;y<height;y++){const sy=Math.max(0,Math.min(height-1,y+offset)),y0=Math.floor(sy),y1=Math.min(height-1,y0+1),dy=sy-y0,i=(y*width+x)*4;for(let c=0;c<3;c++)out[i+c]=data[(y0*width+x)*4+c]*(1-dy)+data[(y1*width+x)*4+c]*dy;out[i+3]=255}}
+ return out;
+}

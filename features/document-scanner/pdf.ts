@@ -23,8 +23,14 @@ export async function archivePdfs(files:Record<string,Uint8Array>,signal:AbortSi
   terminate=zip(files,{level:0},(error,data)=>{signal.removeEventListener('abort',abort);if(signal.aborted)reject(new DOMException('Aborted','AbortError'));else if(error)reject(error);else resolve(data)});
  });
 }
+async function imageJpeg(image:ExportImage){
+ const bitmap=await createImageBitmap(new Blob([new Uint8Array(image.bytes)],{type:image.type==='png'?'image/png':'image/jpeg'}));
+ const canvas=document.createElement('canvas'),swap=image.rotation%180!==0;canvas.width=swap?image.height:image.width;canvas.height=swap?image.width:image.height;
+ try{const ctx=canvas.getContext('2d');if(!ctx)throw new Error('สร้างรูปภาพไม่ได้');ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(image.rotation*Math.PI/180);ctx.drawImage(bitmap,-image.width/2,-image.height/2);const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('บันทึกรูปไม่ได้')),'image/jpeg',.95));return new Uint8Array(await blob.arrayBuffer())}finally{bitmap.close();canvas.width=canvas.height=0}
+}
 export async function buildDocumentExport(pages:DocumentPage[],name:string,format:ExportFormat,signal:AbortSignal,onProgress:(message:string)=>void){
  if(!pages.length)throw new Error('เพิ่มเอกสารอย่างน้อยหนึ่งหน้าก่อนสร้างไฟล์');
+ if(format==='images'){const base=cleanFilename(name),files:Record<string,Uint8Array>={};for(let i=0;i<pages.length;i++){signal.throwIfAborted();onProgress(`กำลังสร้างรูป ${i+1} จาก ${pages.length}`);files[`${base}-${String(i+1).padStart(3,'0')}.jpg`]=await imageJpeg(await prepareExportImage(pages[i],signal))}const zipped=pages.length>1,bytes=zipped?await archivePdfs(files,signal):Object.values(files)[0];signal.throwIfAborted();return{blob:new Blob([new Uint8Array(bytes)],{type:zipped?'application/zip':'image/jpeg'}),filename:exportFilename(base,format,pages.length)}}
  const base=cleanFilename(name),separate=format==='separate'&&pages.length>1;
  let bytes:Uint8Array;
  if(separate){

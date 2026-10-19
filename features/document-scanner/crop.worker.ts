@@ -1,6 +1,6 @@
-import {detectDocument,warpDocument,type Quad} from './geometry';
+import {detectDocument,warpDocument,flattenTextCurve,type Quad} from './geometry';
 import {filterPixels,type ImageMode} from './color';
-type Input={data:Uint8ClampedArray;width:number;height:number}&({kind:'detect'|'warp';corners:Quad}|{kind:'filter';mode:ImageMode}|{kind:'render';mode:ImageMode;corners:Quad|null});
+type Input={sharpness?:number;bend?:number;data:Uint8ClampedArray;width:number;height:number}&({kind:'detect'|'warp';corners:Quad}|{kind:'filter';mode:ImageMode}|{kind:'render';mode:ImageMode;corners:Quad|null});
 self.onmessage=(event:MessageEvent<Input>)=>{
  try{
   const job=event.data,{data,width,height}=job;
@@ -8,10 +8,10 @@ self.onmessage=(event:MessageEvent<Input>)=>{
   else{
    if(job.kind==='render'){
     const base=job.corners?warpDocument(data,width,height,job.corners,2480):{data,width,height};
-    const result={...base,data:filterPixels(base.data,base.width,base.height,job.mode)};
+    const result={...base,data:filterPixels(flattenTextCurve(base.data,base.width,base.height,job.bend??0),base.width,base.height,job.mode,job.sharpness??0)};
     self.postMessage(result,{transfer:[result.data.buffer]});return;
    }
-   const result=job.kind==='filter'?{data:filterPixels(data,width,height,job.mode),width,height}:warpDocument(data,width,height,job.corners);
+   const result=job.kind==='filter'?{data:filterPixels(flattenTextCurve(data,width,height,job.bend??0),width,height,job.mode,job.sharpness??0),width,height}:warpDocument(data,width,height,job.corners);
    self.postMessage(result,{transfer:[result.data.buffer]});
   }
  }catch(error){self.postMessage({error:error instanceof Error?error.message:'ประมวลผลภาพไม่สำเร็จ'})}

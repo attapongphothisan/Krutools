@@ -1,7 +1,8 @@
 import type {Quad} from './geometry';
 import type {ImageMode} from './color';
 import type {DocumentPage} from './session';
-type Job={kind:'detect';corners:Quad}|{kind:'warp';corners:Quad}|{kind:'filter';mode:ImageMode}|{kind:'render';mode:ImageMode;corners:Quad|null};
+type Adjustments={sharpness?:number;bend?:number};
+type Job=Adjustments & ({kind:'detect';corners:Quad}|{kind:'warp';corners:Quad}|{kind:'filter';mode:ImageMode}|{kind:'render';mode:ImageMode;corners:Quad|null});
 type PixelResult={corners:Quad|null;data:Uint8ClampedArray;width:number;height:number};
 async function processPixels(url:string,job:Job,signal:AbortSignal){
  const image=new Image();image.src=url;await image.decode();signal.throwIfAborted();
@@ -35,15 +36,15 @@ export async function processCrop(url:string,kind:'detect'|'warp',corners:Quad,s
  if(!result.blob)throw new Error('สร้างภาพไม่สำเร็จ');
  return{blob:result.blob,width:result.width,height:result.height};
 }
-export async function processColor(url:string,mode:ImageMode,signal:AbortSignal){
- const result=await processPixels(url,{kind:'filter',mode},signal);
+export async function processColor(url:string,mode:ImageMode,signal:AbortSignal,adjustments:Adjustments={}){
+ const result=await processPixels(url,{kind:'filter',mode,...adjustments},signal);
  if(!result.blob)throw new Error('ปรับโหมดภาพไม่สำเร็จ');return result.blob;
 }
 
 export async function prepareExportImage(page:DocumentPage,signal:AbortSignal){
  const url=URL.createObjectURL(page.source);
  try{
-  const result=await processPixels(url,{kind:'render',mode:page.mode,corners:page.corners},signal);
+  const result=await processPixels(url,{kind:'render',mode:page.mode,corners:page.corners,sharpness:page.sharpness,bend:page.bend},signal);
   if(!result.blob)throw new Error('เตรียมภาพสำหรับ PDF ไม่สำเร็จ');
   const bytes=new Uint8Array(await result.blob.arrayBuffer());signal.throwIfAborted();
   return{bytes,width:result.width,height:result.height,rotation:page.rotation,type:result.blob.type==='image/png'?'png' as const:'jpeg' as const};

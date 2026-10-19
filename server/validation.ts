@@ -8,6 +8,7 @@ export const commandSchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('student.save'),payload:student}),
  z.object({action:z.literal('student.import'),payload:z.object({classroomId:id,rows:z.array(student.omit({id:true,classroomId:true})).min(1).max(2000)})}),
  z.object({action:z.literal('exam.save'),payload:exam}),
+ z.object({action:z.literal('exam.delete'),payload:z.object({id})}),
  z.object({action:z.literal('attempt.submit'),payload:z.object({submissionId:id,examId:id,studentId:id,responses:z.array(response).max(60),expectedKeyRevision:z.number().int(),mode:z.enum(['initial','replace','new']),replaceAttemptId:id.optional(),expectedAttemptVersion:z.number().int().optional()})}),
  z.object({action:z.literal('attempt.update'),payload:z.object({attemptId:id,responses:z.array(response).max(60),expectedVersion:z.number().int(),expectedKeyRevision:z.number().int()})})
 ]);

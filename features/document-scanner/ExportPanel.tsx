@@ -24,7 +24,7 @@ export function ExportPanel({pages,settings,onSettings,onBack,initialPage=0}:{pa
   }catch(cause){if(state.active){if(controller.signal.aborted)setStatus('ยกเลิกการสร้างไฟล์แล้ว เอกสารยังอยู่');else{setError(cause instanceof Error?cause.message:'สร้างไฟล์ไม่สำเร็จ กรุณาลองใหม่');setStatus('')}}}
   finally{state.running=false;if(state.active){state.controller=null;setBusy(false)}}
  }
- return <section className="document-export" aria-label="ตัวอย่างและดาวน์โหลด PDF">
+ return <section className="document-export" aria-label="ตัวอย่างและดาวน์โหลดเอกสาร">
   <div className="document-export-heading"><h2>ตรวจเอกสารก่อนดาวน์โหลด</h2><button type="button" className="document-back" onClick={onBack}><ArrowLeft size={17}/>กลับไปปรับหน้า</button></div>
   <div className="document-export-grid">
    <div className="document-a4-panel">
@@ -38,14 +38,14 @@ export function ExportPanel({pages,settings,onSettings,onBack,initialPage=0}:{pa
    <div className="document-export-settings">
     <fieldset disabled={busy} className="document-export-fields">
      <label htmlFor="document-export-name">ชื่อไฟล์<input id="document-export-name" value={settings.name} maxLength={120} onChange={event=>change({...settings,name:event.target.value})} autoComplete="off"/></label>
-     <fieldset className="document-export-format"><legend>รูปแบบไฟล์</legend><label><input type="radio" name="document-export-format" checked={settings.format==='combined'} onChange={()=>change({...settings,format:'combined'})}/><span>รวมทุกหน้าเป็น PDF เดียว</span></label><label><input type="radio" name="document-export-format" checked={settings.format==='separate'} onChange={()=>change({...settings,format:'separate'})}/><span>แยก PDF หน้าละไฟล์</span></label></fieldset>
+     <fieldset className="document-export-format"><legend>รูปแบบไฟล์</legend><label><input type="radio" name="document-export-format" checked={settings.format==='combined'} onChange={()=>change({...settings,format:'combined'})}/><span>รวมทุกหน้าเป็น PDF เดียว</span></label><label><input type="radio" name="document-export-format" checked={settings.format==='separate'} onChange={()=>change({...settings,format:'separate'})}/><span>แยก PDF หน้าละไฟล์</span></label><label><input type="radio" name="document-export-format" checked={settings.format==='images'} onChange={()=>change({...settings,format:'images'})}/><span>รูปภาพ JPG (หลายหน้ารวมเป็น ZIP)</span></label></fieldset>
      {settings.format==='separate'&&<p className="document-export-note">{pages.length>1?'ดาวน์โหลดเป็น ZIP ไฟล์เดียว ภายในมี PDF เรียงตามเลขหน้า':'มีเอกสารหน้าเดียว จึงดาวน์โหลดเป็น PDF โดยตรง'}</p>}
     </fieldset>
-    <div className="document-export-file"><FileText size={20}/><div><strong>{filename}</strong><small>{pages.length} หน้า · A4{ready?` · ${sizeLabel(ready.size)}`:''}</small></div></div>
+    <div className="document-export-file"><FileText size={20}/><div><strong>{filename}</strong><small>{pages.length} หน้า · {settings.format==='images'?'รูปภาพตามสัดส่วนเอกสาร':'A4'}{ready?` · ${sizeLabel(ready.size)}`:''}</small></div></div>
     <p className="document-export-status" role="status">{busy&&<LoaderCircle size={17} className="spin"/>}{status}</p>
     {error&&<p role="alert" className="document-errors">{error}</p>}
     {busy?<button type="button" className="button secondary" onClick={()=>lifecycle.current.controller?.abort()}>ยกเลิกการสร้างไฟล์</button>:<button type="button" className="button" disabled={!settings.name.trim()} onClick={()=>void generate()}><FileText size={18}/>{ready?'สร้างไฟล์อีกครั้ง':'สร้างไฟล์พร้อมดาวน์โหลด'}</button>}
-    {ready&&<a className="button document-download" href={ready.url} download={ready.filename}><Download size={18}/>ดาวน์โหลด {ready.filename.endsWith('.zip')?'ZIP':'PDF'}</a>}
+    {ready&&<a className="button document-download" href={ready.url} download={ready.filename}><Download size={18}/>ดาวน์โหลด {ready.filename.endsWith('.zip')?'ZIP':ready.filename.endsWith('.jpg')?'รูปภาพ JPG':'PDF'}</a>}
     <p className="document-export-note">เมื่อไฟล์พร้อม ให้กดดาวน์โหลดเพื่อบันทึกลงอุปกรณ์ หากเปิดตัวอย่างไฟล์ ให้ใช้เมนูแชร์เพื่อบันทึก</p>
    </div>
   </div>

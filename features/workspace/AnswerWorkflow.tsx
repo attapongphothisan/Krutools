@@ -5,7 +5,7 @@ import './answer-workflow.css';
 export const answerSteps=[
  {id:'exams',label:'เตรียมกระดาษ',description:'สร้างชุดสอบ ตั้งเฉลย แล้วบันทึกกระดาษคำตอบเป็น PDF'},
  {id:'classrooms',label:'เพิ่มนักเรียน',description:'เลือกห้องเรียน แล้วเพิ่มรายชื่อทีละคนหรือนำเข้าจากไฟล์'},
- {id:'grading',label:'ตรวจคำตอบ',description:'เลือกนักเรียน ถ่ายภาพ แล้วตรวจทานก่อนยืนยันคะแนน'},
+ {id:'grading',label:'ตรวจคำตอบ',description:'ถ่ายภาพเพื่อดูคะแนนทันที หรือเลือกนักเรียนเพื่อบันทึกผล'},
  {id:'results',label:'สรุปคะแนน',description:'ตรวจคะแนนรวมและส่งออก Excel เพื่อนำไปใช้งานต่อ'},
 ] as const;
 export type AnswerStep=typeof answerSteps[number]['id'];

@@ -126,3 +126,4 @@
 .document-export-settings .document-errors{margin:0;font-size:12px}
 .document-download{background:#2563eb!important;color:white!important}
 @media(max-width:600px){.document-export{padding:16px}.document-export-grid{grid-template-columns:minmax(0,1fr);gap:24px}.document-a4-stage{height:360px}.document-export-entry>.button{width:100%;justify-content:center}.document-export-heading h2{font-size:17px}}
+.document-camera-video{width:100%;max-height:60vh;background:#0f172a;border-radius:16px;object-fit:contain}.document-adjustments{display:grid;gap:14px;margin:14px 0}.document-adjustments label{display:grid;gap:6px}.document-adjustments input{width:100%}
