@@ -12,6 +12,7 @@ export function ExportPanel({pages,settings,onSettings,onBack,initialPage=0}:{pa
  const page=pages[index],layout=a4Layout(page.width,page.height,page.rotation),filename=exportFilename(settings.name,settings.format,pages.length);
  function clearReady(){if(lifecycle.current.url){URL.revokeObjectURL(lifecycle.current.url);lifecycle.current.url=null}setReady(null)}
  function change(next:ExportSettings){clearReady();setError('');setStatus('');onSettings(next)}
+ function download(url:string,file:string){const link=document.createElement('a');link.href=url;link.download=file;link.style.display='none';document.body.appendChild(link);link.click();link.remove()}
  async function generate(){
   const state=lifecycle.current;if(state.running||!settings.name.trim())return;
   state.running=true;const controller=new AbortController();state.controller=controller;
@@ -20,7 +21,7 @@ export function ExportPanel({pages,settings,onSettings,onBack,initialPage=0}:{pa
    const {buildDocumentExport}=await import('./pdf');controller.signal.throwIfAborted();
    const result=await buildDocumentExport(pages,settings.name,settings.format,controller.signal,message=>{if(state.active&&!controller.signal.aborted)setStatus(message)});
    if(!state.active||controller.signal.aborted)return;
-   const url=URL.createObjectURL(result.blob);state.url=url;setReady({url,filename:result.filename,size:result.blob.size});setStatus('ไฟล์พร้อมดาวน์โหลด');
+   const url=URL.createObjectURL(result.blob);state.url=url;setReady({url,filename:result.filename,size:result.blob.size});download(url,result.filename);setStatus('สร้างไฟล์และเริ่มดาวน์โหลดแล้ว');
   }catch(cause){if(state.active){if(controller.signal.aborted)setStatus('ยกเลิกการสร้างไฟล์แล้ว เอกสารยังอยู่');else{setError(cause instanceof Error?cause.message:'สร้างไฟล์ไม่สำเร็จ กรุณาลองใหม่');setStatus('')}}}
   finally{state.running=false;if(state.active){state.controller=null;setBusy(false)}}
  }
@@ -44,8 +45,8 @@ export function ExportPanel({pages,settings,onSettings,onBack,initialPage=0}:{pa
     <div className="document-export-file"><FileText size={20}/><div><strong>{filename}</strong><small>{pages.length} หน้า · {settings.format==='images'?'รูปภาพตามสัดส่วนเอกสาร':'A4'}{ready?` · ${sizeLabel(ready.size)}`:''}</small></div></div>
     <p className="document-export-status" role="status">{busy&&<LoaderCircle size={17} className="spin"/>}{status}</p>
     {error&&<p role="alert" className="document-errors">{error}</p>}
-    {busy?<button type="button" className="button secondary" onClick={()=>lifecycle.current.controller?.abort()}>ยกเลิกการสร้างไฟล์</button>:<button type="button" className="button" disabled={!settings.name.trim()} onClick={()=>void generate()}><FileText size={18}/>{ready?'สร้างไฟล์อีกครั้ง':'สร้างไฟล์พร้อมดาวน์โหลด'}</button>}
-    {ready&&<a className="button document-download" href={ready.url} download={ready.filename}><Download size={18}/>ดาวน์โหลด {ready.filename.endsWith('.zip')?'ZIP':ready.filename.endsWith('.jpg')?'รูปภาพ JPG':'PDF'}</a>}
+    {busy?<button type="button" className="button secondary" onClick={()=>lifecycle.current.controller?.abort()}>ยกเลิกการสร้างไฟล์</button>:<button type="button" className="button" disabled={!settings.name.trim()} onClick={()=>ready?download(ready.url,ready.filename):void generate()}><FileText size={18}/>{ready?'ดาวน์โหลดอีกครั้ง':`บันทึก ${settings.format==='images'?'รูป JPG':settings.format==='separate'?'PDF แยกหน้า':'PDF'}`}</button>}
+    {ready&&<a className="button secondary document-download" href={ready.url} download={ready.filename}><Download size={18}/>หากดาวน์โหลดไม่เริ่ม กดที่นี่เพื่อบันทึก {ready.filename.endsWith('.zip')?'ZIP':ready.filename.endsWith('.jpg')?'รูปภาพ JPG':'PDF'}</a>}
     <p className="document-export-note">เมื่อไฟล์พร้อม ให้กดดาวน์โหลดเพื่อบันทึกลงอุปกรณ์ หากเปิดตัวอย่างไฟล์ ให้ใช้เมนูแชร์เพื่อบันทึก</p>
    </div>
   </div>

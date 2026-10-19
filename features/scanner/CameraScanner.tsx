@@ -18,8 +18,8 @@ export function CameraScanner({expected,onRead,onClose}:{expected:{examId:string
   if(objectUrl.current)URL.revokeObjectURL(objectUrl.current);
   objectUrl.current=URL.createObjectURL(file);setPhoto(objectUrl.current);
  }
- function read(){
-  const img=image.current;if(!img||!loaded||active.current)return;
+ function read(force=false){
+  const img=image.current;if(!img||(!loaded&&!force)||active.current)return;
   setError('');setBusy(true);active.current=true;
   try{
    const canvas=document.createElement('canvas'),scale=Math.min(1,2400/Math.max(img.naturalWidth,img.naturalHeight));
@@ -36,10 +36,10 @@ export function CameraScanner({expected,onRead,onClose}:{expected:{examId:string
  }
  return <Dialog title="ถ่ายภาพกระดาษคำตอบ" subtitle="ถ่ายภาพ → อ่านคำตอบ → ตรวจทานและยืนยันคะแนน" onClose={onClose}>
   <input ref={input} type="file" accept="image/*" capture="environment" hidden aria-label="ถ่ายหรือเลือกภาพกระดาษคำตอบ" onChange={e=>{choose(e.target.files?.[0]);e.target.value=''}}/>
-  <div className="camera-view">{photo?<img ref={image} src={photo} alt="ภาพกระดาษคำตอบที่เลือก" style={{display:'block',width:'100%',height:'100%',objectFit:'contain'}} onLoad={()=>setLoaded(true)} onError={()=>{setLoaded(false);setError('เปิดภาพนี้ไม่ได้ กรุณาถ่ายใหม่หรือเลือกภาพ JPEG / PNG')}}/>:<div className="camera-placeholder"><Camera size={44} strokeWidth={1.2}/><p>ถ่ายกระดาษครั้งละ 1 ใบ<br/>ให้เห็น QR และจุดดำทั้ง 4 มุม</p></div>}</div>
-  <p className="scanner-status" aria-live="polite">{busy?<LoaderCircle className="spin" size={17}/>:<ScanLine size={17}/>} {busy?'กำลังอ่านคำตอบจากภาพ…':photo?'ตรวจว่าภาพชัดและเห็นกระดาษครบ แล้วกดอ่านคำตอบ':'กดถ่ายภาพเพื่อเปิดกล้องของโทรศัพท์ หรือเลือกไฟล์ภาพบนคอม'}</p>
+  <div className="camera-view">{photo?<img ref={image} src={photo} alt="ภาพกระดาษคำตอบที่เลือก" style={{display:'block',width:'100%',height:'100%',objectFit:'contain'}} onLoad={()=>{setLoaded(true);requestAnimationFrame(()=>read(true))}} onError={()=>{setLoaded(false);setError('เปิดภาพนี้ไม่ได้ กรุณาถ่ายใหม่หรือเลือกภาพ JPEG / PNG')}}/>:<div className="camera-placeholder"><Camera size={44} strokeWidth={1.2}/><p>ถ่ายกระดาษครั้งละ 1 ใบ<br/>ให้เห็น QR และจุดดำทั้ง 4 มุม</p></div>}</div>
+  <p className="scanner-status" aria-live="polite">{busy?<LoaderCircle className="spin" size={17}/>:<ScanLine size={17}/>} {busy?'กำลังอ่านคำตอบจากภาพ…':photo?'ระบบจะอ่านคำตอบให้อัตโนมัติ ตรวจว่าภาพเห็นกระดาษครบ':'กดถ่ายภาพเพื่อเปิดกล้องของโทรศัพท์ หรือเลือกไฟล์ภาพบนคอม'}</p>
   <p className="muted">ภาพใช้เพื่ออ่านบนอุปกรณ์เท่านั้น ไม่อัปโหลดหรือบันทึกในระบบ</p>
   {error&&<p className="error" role="alert">{error}</p>}
-  <div className="dialog-footer"><button className="button secondary" disabled={busy} onClick={()=>input.current?.click()}><Camera size={18}/> {photo?'ถ่ายใหม่ / เลือกภาพใหม่':'ถ่ายภาพ / เลือกภาพ'}</button>{photo&&<button className="button" disabled={busy||!loaded} onClick={read}>{busy?<LoaderCircle className="spin" size={18}/>:<ScanLine size={18}/>} {busy?'กำลังอ่าน…':'อ่านคำตอบจากภาพ'}</button>}</div>
+  <div className="dialog-footer"><button className="button secondary" disabled={busy} onClick={()=>input.current?.click()}><Camera size={18}/> {photo?'ถ่ายใหม่ / เลือกภาพใหม่':'ถ่ายภาพ / เลือกภาพ'}</button></div>
  </Dialog>
 }
