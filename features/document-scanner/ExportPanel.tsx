@@ -7,6 +7,7 @@ import {a4Layout,exportFilename,sizeLabel,type ExportSettings} from './export-la
 
 export function ExportPanel({pages,settings,onSettings,onBack,initialPage=0}:{pages:DocumentPage[];settings:ExportSettings;onSettings:(settings:ExportSettings)=>void;onBack:()=>void;initialPage?:number}){
  const[index,setIndex]=useState(Math.max(0,Math.min(initialPage,pages.length-1))),[busy,setBusy]=useState(false),[status,setStatus]=useState(''),[error,setError]=useState(''),[ready,setReady]=useState<{url:string;filename:string;size:number}|null>(null);
+ const swipe=useRef<{x:number;y:number}|null>(null);
  const lifecycle=useRef({active:false,url:null as string|null,controller:null as AbortController|null,running:false});
  useEffect(()=>{const state=lifecycle.current;state.active=true;return()=>{state.active=false;state.controller?.abort();if(state.url)URL.revokeObjectURL(state.url)}},[]);
  const page=pages[index],layout=a4Layout(page.width,page.height,page.rotation),filename=exportFilename(settings.name,settings.format,pages.length);
@@ -29,12 +30,12 @@ export function ExportPanel({pages,settings,onSettings,onBack,initialPage=0}:{pa
   <div className="document-export-heading"><h2>ตรวจเอกสารก่อนดาวน์โหลด</h2><button type="button" className="document-back" onClick={onBack}><ArrowLeft size={17}/>กลับไปปรับหน้า</button></div>
   <div className="document-export-grid">
    <div className="document-a4-panel">
-    <div className="document-a4-stage"><svg className="document-a4-image" viewBox={`0 0 ${layout.pageWidth} ${layout.pageHeight}`} role="img" aria-label={`ตัวอย่าง PDF หน้า ${index+1} กระดาษ A4 ${layout.landscape?'แนวนอน':'แนวตั้ง'}`}>
+    <div className="document-a4-stage" style={{touchAction:'pan-y'}} onTouchStart={e=>{swipe.current={x:e.touches[0].clientX,y:e.touches[0].clientY}}} onTouchEnd={e=>{const start=swipe.current;swipe.current=null;if(!start)return;const dx=e.changedTouches[0].clientX-start.x,dy=e.changedTouches[0].clientY-start.y;if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy))setIndex(i=>Math.max(0,Math.min(pages.length-1,i+(dx<0?1:-1))))}}><svg className="document-a4-image" viewBox={`0 0 ${layout.pageWidth} ${layout.pageHeight}`} role="img" aria-label={`ตัวอย่าง PDF หน้า ${index+1} กระดาษ A4 ${layout.landscape?'แนวนอน':'แนวตั้ง'}`}>
      <rect width={layout.pageWidth} height={layout.pageHeight} fill="white"/>
      <svg x={layout.x} y={layout.y} width={layout.imageWidth} height={layout.imageHeight} viewBox={pageViewBox(page)}><PageArtwork page={page}/></svg>
     </svg></div>
     <div className="document-export-page-nav"><button type="button" className="document-back" aria-label="ดูหน้าก่อนหน้า" disabled={index===0} onClick={()=>setIndex(i=>i-1)}><ArrowLeft size={17}/></button><span>หน้า {index+1} จาก {pages.length}</span><button type="button" className="document-back" aria-label="ดูหน้าถัดไป" disabled={index===pages.length-1} onClick={()=>setIndex(i=>i+1)}><ArrowRight size={17}/></button></div>
-    <p className="document-export-note">A4 {layout.landscape?'แนวนอน':'แนวตั้ง'} · ขอบขาว 5 มม. · แสดงภาพครบทั้งหน้า</p>
+    <p className="document-export-note">ปัดซ้ายขวาเพื่อดูทุกหน้า · A4 {layout.landscape?'แนวนอน':'แนวตั้ง'} · ขอบขาว 5 มม. · แสดงภาพครบทั้งหน้า</p>
    </div>
    <div className="document-export-settings">
     <fieldset disabled={busy} className="document-export-fields">

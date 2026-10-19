@@ -19,7 +19,7 @@ async function readPage(file:File):Promise<DocumentPage>{
   const url=URL.createObjectURL(blob);
   let corners:Quad|null=null,base=url,w=width,h=height;const controller=new AbortController();
   try{const detected=await processCrop(url,'detect',fullFrame(),controller.signal);if(detected.corners){corners=detected.corners;const warped=await processCrop(url,'warp',corners,controller.signal);base=URL.createObjectURL(warped.blob);w=warped.width;h=warped.height}}catch{/* Keep the full original when no reliable outline is available. */}
-  const sharpness=-1,bend=-1;let preview=base;try{preview=URL.createObjectURL(await processColor(base,'original',controller.signal,{sharpness,bend}))}catch{}
+  const sharpness=.15,bend=0;let preview=base;try{preview=URL.createObjectURL(await processColor(base,'original',controller.signal,{sharpness,bend}))}catch{}
   return{id:crypto.randomUUID(),name:file.name,source:file,previewUrl:preview,originalUrl:url,colorUrl:base,mode:'original',originalWidth:width,originalHeight:height,corners,width:w,height:h,rotation:0,sharpness,bend,autoAdjusted:!!corners};
  }finally{URL.revokeObjectURL(sourceUrl)}
 }
@@ -56,6 +56,10 @@ export function useDocumentSession(){
    if(activity.current.alive&&task===activity.current.operation){setBusy(false);setProgress('');setErrors(failed)}
   }
   return added;
+ }
+ async function replaceFile(id:string,file:File){
+  if(importing.current)return;importing.current=true;setBusy(true);setErrors([]);setProgress('กำลังเปลี่ยนภาพและปรับขอบ…');
+  try{const page=await readPage(file);if(!activity.current.alive){new Set([page.previewUrl,page.originalUrl,page.colorUrl]).forEach(url=>URL.revokeObjectURL(url));return}const previous=current.current,next=previous.map(item=>item.id===id?{...page,id}:item);[page.previewUrl,page.originalUrl,page.colorUrl].forEach(url=>resources.current.add(url));releaseUnused(previous,next);update(next);setSelectedId(id)}catch{setErrors(['เปิดภาพใหม่ไม่ได้ ภาพเดิมยังอยู่ กรุณาลองถ่ายใหม่'])}finally{importing.current=false;if(activity.current.alive){setBusy(false);setProgress('')}}
  }
  function remove(id:string){
   const index=current.current.findIndex(page=>page.id===id);if(index<0)return;
@@ -109,7 +113,6 @@ export function useDocumentSession(){
    return current.current.map(page=>changed.get(page.id)??page);
   });
  }
- function setAdjustments(id:string,sharpness:number,bend:number){return runProcessing(async(signal,temporary)=>{setProgress('กำลังปรับความคมชัดและแนวโค้ง…');const page=current.current.find(p=>p.id===id);if(!page)return current.current;const url=URL.createObjectURL(await processColor(page.colorUrl,page.mode,signal,{sharpness,bend}));temporary.add(url);return current.current.map(p=>p.id===id?{...p,sharpness,bend,previewUrl:url}:p)})}
  function cancelProcessing(){processing.current?.abort()}
- return{pages,selectedId,setSelectedId,busy,progress,errors,addFiles,remove,rotate,move,applyCrop,setMode,setAdjustments,canCancel,cancelProcessing};
+ return{pages,selectedId,setSelectedId,busy,progress,errors,addFiles,replaceFile,remove,rotate,move,applyCrop,setMode,canCancel,cancelProcessing};
 }

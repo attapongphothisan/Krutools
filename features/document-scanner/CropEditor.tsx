@@ -41,7 +41,7 @@ export function CropEditor({page,onClose,onApply}:{page:DocumentPage;onClose:()=
  return <Dialog title="ปรับขอบกระดาษ" subtitle="ลากมุมทั้ง 4 จุดให้ตรงกับขอบเอกสาร แล้วกดใช้กรอบนี้" wide onClose={close}>
   <div className="document-crop-body">
    <p id="crop-instructions" className="document-crop-instructions">ปรับกรอบจากภาพต้นฉบับ การหมุนหน้าจะยังอยู่ตามที่เลือกไว้ ใช้ปุ่มลูกศรบนคีย์บอร์ดเลื่อนมุมได้</p>
-   <div className="document-crop-stage" ref={stage} style={{aspectRatio:`${page.originalWidth} / ${page.originalHeight}`,width:`min(100%, calc(clamp(160px, 28dvh, 300px) * ${page.originalWidth/page.originalHeight}))`}}>
+   <div className="document-crop-stage" ref={stage} style={{aspectRatio:`${page.originalWidth} / ${page.originalHeight}`,width:`min(100%, calc(clamp(240px, 52dvh, 520px) * ${page.originalWidth/page.originalHeight}))`}}>
     <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="document-crop-overlay" aria-hidden="true">
      <image href={page.originalUrl} width="1" height="1" preserveAspectRatio="none"/>
      <path d={`M0 0H1V1H0Z M${corners.map(p=>`${p.x} ${p.y}`).join('L')}Z`} fill="#0f172a" fillOpacity=".48" fillRule="evenodd"/>
