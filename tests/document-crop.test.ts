@@ -32,4 +32,12 @@ describe('document perspective correction',()=>{
   const found=detectDocument(pixels,w,h);expect(found).not.toBeNull();found!.forEach((p,i)=>expect(Math.hypot(p.x-quad[i].x,p.y-quad[i].y)).toBeLessThan(.035));
  });
 
+ it('keeps the outer boundary when a shadow divides the brightness of a page',()=>{
+  const w=240,h=200,data=frame(w,h,(x,y)=>{const paper=x>=25&&x<=215&&y>=20&&y<=180;const value=paper?Math.round(115+125*x/w):55;return[value,value,value,255]});
+  const found=detectDocument(data,w,h);expect(found).not.toBeNull();expect(found![0].x).toBeCloseTo(25/(w-1),1);expect(found![2].x).toBeCloseTo(215/(w-1),1);expect(found![0].y).toBeCloseTo(20/(h-1),1);
+ });
+ it('does not mistake an interior printed table for a paper boundary',()=>{
+  const w=220,h=180,data=frame(w,h,(x,y)=>{const table=(x===35||x===185)&&y>=30&&y<=150||(y===30||y===150)&&x>=35&&x<=185;return table?[30,30,30,255]:[245,245,245,255]});expect(detectDocument(data,w,h)===null).toBe(true);
+ });
+
 });

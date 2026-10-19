@@ -1,3 +1,4 @@
+import {edgeFrame,edgeDocument,outlineScore,refineOutline} from './edges';
 import {homography,project,type Point} from '../scanner/warp';
 export type Quad=[Point,Point,Point,Point];
 export const fullFrame=():Quad=>[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
@@ -44,8 +45,8 @@ export function detectDocument(data:Uint8ClampedArray,width:number,height:number
  const stride=Math.max(1,Math.ceil(Math.max(width,height)/400)),w=Math.ceil(width/stride),h=Math.ceil(height/stride),gray=new Uint8Array(w*h);
  let sum=0;
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(Math.min(height-1,y*stride)*width+Math.min(width-1,x*stride))*4;const value=Math.round(.299*data[i]+.587*data[i+1]+.114*data[i+2]);gray[y*w+x]=value;sum+=value}
- const mean=sum/gray.length;let best:Quad|null=null,bestArea=0;
- for(const threshold of [...new Set([Math.round(Math.min(235,Math.max(145,mean+20))),190,220])]){
+ const mean=sum/gray.length;const edges=edgeFrame(gray,w,h);let best:Quad|null=edgeDocument(gray,w,h,edges),bestScore=best?outlineScore(best,gray,w,h,edges):0;
+ for(const threshold of [...new Set([Math.round(Math.min(235,Math.max(145,mean+20))),Math.round(Math.max(70,mean-20)),130,160,190,220])]){
   const seen=new Uint8Array(w*h),queue=new Int32Array(w*h);
   for(let start=0;start<gray.length;start++){
    if(seen[start]||gray[start]<threshold)continue;
@@ -61,10 +62,10 @@ export function detectDocument(data:Uint8ClampedArray,width:number,height:number
    const fraction=count/(w*h);if(fraction<.15||fraction>.94||border>Math.min(w,h)*.1)continue;
    const quad=(outlineQuad(boundary)??[tl,tr,br,bl]).map(p=>({x:Math.min(1,p.x*stride/(width-1)),y:Math.min(1,p.y*stride/(height-1))})) as Quad;
    const area=quad.reduce((a,p,i)=>a+p.x*quad[(i+1)%4].y-quad[(i+1)%4].x*p.y,0)/2;
-   if(validQuad(quad)&&area>.18&&fraction/area>.65&&area>bestArea){best=quad;bestArea=area}
+   if(validQuad(quad)&&area>.18&&fraction/area>.65){const evidence=outlineScore(quad,gray,w,h,edges),score=evidence?evidence+.003:0;if(score>bestScore){best=quad;bestScore=score}}
   }
  }
- return best;
+ return best?refineOutline(best,gray,w,h,edges):null;
 }
 
 // Estimate the vertical displacement of text rows in neighbouring strips.

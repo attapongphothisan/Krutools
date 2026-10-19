@@ -3,7 +3,6 @@
 import {useEffect,useRef,useState,type ChangeEvent,type TouchEvent} from 'react';
 import {ArrowLeft,Camera,FileText,Images,ScanLine,RotateCw,Trash2,LoaderCircle,GripVertical,Crop,ArrowDownToLine} from 'lucide-react';
 import {Dialog} from '../ui';
-import {DocumentCamera} from './DocumentCamera';
 import {CropEditor} from './CropEditor';
 import {imageModes} from './color';
 import {PageImage} from './PageImage';
@@ -16,7 +15,6 @@ const steps=['เพิ่มเอกสาร','ปรับและจัด
 
 export function DocumentScanner({onBack}:{onBack:()=>void}) {
  const heading=useRef<HTMLHeadingElement>(null),camera=useRef<HTMLInputElement>(null),picker=useRef<HTMLInputElement>(null),dragged=useRef<string|null>(null),swipeStart=useRef<{x:number;y:number}|null>(null);
- const[cameraOpen,setCameraOpen]=useState(false);
  const[retakeId,setRetakeId]=useState<string|null>(null);
  const[confirmExit,setConfirmExit]=useState(false),[cropId,setCropId]=useState<string|null>(null);
  const[exportOpen,setExportOpen]=useState(false),[exportSettings,setExportSettings]=useState<ExportSettings>(()=>({name:defaultExportName(),format:'combined'}));
@@ -33,9 +31,9 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
  function back(){if(pages.length||busy)setConfirmExit(true);else onBack()}
  function swipePage(event:TouchEvent<HTMLDivElement>){const start=swipeStart.current;swipeStart.current=null;if(!start)return;const dx=event.changedTouches[0].clientX-start.x,dy=event.changedTouches[0].clientY-start.y;if(Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy))return;const next=pages[selectedIndex+(dx<0?1:-1)];if(next)setSelectedId(next.id)}
  const importActions=<div className="document-import-actions">
-  <button type="button" className="button" disabled={busy} onClick={()=>{setRetakeId(null);setCameraOpen(true)}}><Camera size={19}/>{pages.length?'ถ่ายเพิ่ม':'ถ่ายเอกสาร'}</button>
-  <button type="button" className="button secondary" disabled={busy} onClick={()=>{setRetakeId(null);picker.current?.click()}}><Images size={19}/>{pages.length?'เพิ่มรูปจากเครื่อง':'เลือกรูปจากเครื่อง'}</button>
- <button type="button" className="text-button" disabled={busy} onClick={()=>{setRetakeId(null);camera.current?.click()}}>ใช้กล้องโทรศัพท์</button></div>;
+  <button type="button" className="button" disabled={busy} onClick={()=>{setRetakeId(null);camera.current?.click()}}><Camera size={19}/>{pages.length?'ถ่ายเพิ่ม':'ถ่ายเอกสาร'}</button>
+  <button type="button" className="button secondary" disabled={busy} onClick={()=>{setRetakeId(null);picker.current?.click()}}><Images size={19}/>นำเข้าหลายรูป</button>
+</div>;
 
  return <main className="document-scanner">
   <header className="document-scanner-header">
@@ -59,7 +57,7 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
    {!pages.length?<section className="document-import-panel" aria-labelledby="document-import-title" aria-busy={busy}>
     <div className="document-empty-art" aria-hidden="true"><FileText size={44} strokeWidth={1.4}/></div>
     <h2 id="document-import-title">เริ่มจากเอกสารหน้าแรก</h2>
-    <p>ใช้ภาพจากกล้องหรือเลือกรูปหลายภาพพร้อมกัน</p>
+    <p>กดถ่ายเพื่อเปิดกล้องโทรศัพท์ หรือเลือกรูปหลายหน้าพร้อมกัน</p>
     {importActions}
    </section>:<section className="document-workspace" aria-label="จัดหน้าเอกสาร" aria-busy={busy}>
     <div className="document-page-toolbar"><h2>เอกสารของคุณ <span>{pages.length} หน้า</span></h2>{importActions}</div>
@@ -70,7 +68,7 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
      <fieldset className="document-color-panel" disabled={busy}>
       <legend>โหมดภาพ</legend>
       <div className="document-mode-options">{imageModes.map(mode=><label key={mode.value} className={`document-mode-option ${selected.mode===mode.value?'selected':''}`}><input type="radio" name="document-image-mode" value={mode.value} checked={selected.mode===mode.value} onChange={()=>void setMode(mode.value)}/><span>{mode.label}</span></label>)}</div>
-      <div className="document-mode-footer"><p>{selected.mode==='sharp'?'เหมาะกับเอกสารข้อความ ตรวจว่าตัวอักษรจางยังอ่านได้ครบก่อนบันทึก':'เลือกโหมดสำหรับหน้านี้ ภาพต้นฉบับยังคงอยู่'}</p><button type="button" className="document-back" disabled={busy||pages.every(page=>page.mode===selected.mode)} onClick={()=>void setMode(selected.mode,true)}>ใช้โหมดนี้กับทุกหน้า</button></div>
+      <div className="document-mode-footer"><p>{selected.mode==='bw'?'เหมาะกับเอกสารข้อความ ตรวจว่าตัวอักษรจางยังอ่านได้ครบก่อนบันทึก':'เลือกโหมดสำหรับหน้านี้ ภาพต้นฉบับยังคงอยู่'}</p><button type="button" className="document-back" disabled={busy||pages.every(page=>page.mode===selected.mode)} onClick={()=>void setMode(selected.mode,true)}>ใช้โหมดนี้กับทุกหน้า</button></div>
      </fieldset>
      <div className="document-edit-actions" aria-label="เครื่องมือสำหรับหน้าที่เลือก">
       <button type="button" className="document-back" disabled={busy} onClick={()=>setCropId(selected.id)}><Crop size={17}/>{selected.corners?'แก้ไขขอบ':'ปรับขอบ'}</button>
@@ -92,10 +90,10 @@ export function DocumentScanner({onBack}:{onBack:()=>void}) {
     </ol>
     <div className="document-export-entry"><button type="button" className="button" disabled={busy} onClick={()=>{setExportOpen(true);window.scrollTo({top:0})}}><ArrowDownToLine size={18}/>ดูตัวอย่างและส่งออก</button></div>
    </section>}
-   <p className="document-session-note">ภาพเอกสารอยู่เฉพาะในอุปกรณ์นี้ระหว่างใช้งาน<br/>เมื่อออกจากเครื่องมือหรือรีเฟรช งานสแกนจะถูกล้าง</p>
+   <p className="document-session-note">เอกสารจำนวนมาก: ถ่ายด้วยกล้องโทรศัพท์ แล้วกดนำเข้าหลายรูปเพื่อเลือกทั้งชุด<br/>ภาพเอกสารอยู่เฉพาะในอุปกรณ์นี้ระหว่างใช้งาน<br/>เมื่อออกจากเครื่องมือหรือรีเฟรช งานสแกนจะถูกล้าง</p>
    </>}
   </div>
-  {cameraOpen&&<DocumentCamera onCapture={addFiles} onClose={()=>setCameraOpen(false)} onNative={()=>{setRetakeId(null);setCameraOpen(false);camera.current?.click()}}/>}
+
   {cropPage&&<CropEditor key={cropPage.id} page={cropPage} onClose={()=>setCropId(null)} onApply={(corners,result)=>{applyCrop(cropPage.id,corners,result);setCropId(null)}}/>}
   {confirmExit&&<Dialog title="ออกและล้างงานสแกนนี้?" subtitle="ภาพและการจัดหน้าจะถูกล้าง เมื่อกลับมาจะเริ่มงานใหม่" onClose={()=>setConfirmExit(false)}><div className="dialog-footer"><button type="button" className="button secondary" onClick={()=>setConfirmExit(false)}>ทำต่อ</button><button type="button" className="button" onClick={onBack}>ออกและล้างงาน</button></div></Dialog>}
  </main>;

@@ -23,7 +23,7 @@ async function processPixels(url:string,job:Job,signal:AbortSignal){
   if(job.kind==='detect')return{corners:result.corners,blob:null,width:0,height:0};
   canvas.width=result.width;canvas.height=result.height;ctx.putImageData(new ImageData(new Uint8ClampedArray(result.data),result.width,result.height),0,0);
   // Lossless output keeps the sharp mode strictly black and white.
-  const format=(job.kind==='filter'||job.kind==='render')&&job.mode==='sharp'?'image/png':'image/jpeg';
+  const format=(job.kind==='filter'||job.kind==='render')&&job.mode==='bw'?'image/png':'image/jpeg';
   const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('สร้างภาพไม่สำเร็จ')),format,.92));
   signal.throwIfAborted();return{blob,width:result.width,height:result.height,corners:null};
  }finally{canvas.width=0;canvas.height=0}

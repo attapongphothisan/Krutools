@@ -11,5 +11,5 @@ it('straightens a mild text-line curve and leaves blank paper unchanged',()=>{
  expect(range(out)).toBeLessThan(range(data)*.5);
  const blank=new Uint8ClampedArray(width*height*4).fill(255);expect(flattenTextCurve(blank,width,height,1)).toEqual(blank);
 });
-it('sharpness increases edge contrast without changing dimensions or alpha',()=>{const data=new Uint8ClampedArray([100,100,100,255,100,100,100,255,100,100,100,255,100,100,100,255,150,150,150,255,100,100,100,255,100,100,100,255,100,100,100,255,100,100,100,255]);const out=filterPixels(data,3,3,'original',.5);expect(out[16]).toBeGreaterThan(data[16]);expect(out).toHaveLength(data.length);expect(out[19]).toBe(255)});
+it('sharpness increases edge contrast without changing dimensions or alpha',()=>{const data=new Uint8ClampedArray([100,100,100,255,100,100,100,255,100,100,100,255,100,100,100,255,70,70,70,255,100,100,100,255,100,100,100,255,100,100,100,255,100,100,100,255]);const base=filterPixels(data,3,3,'color',0),out=filterPixels(data,3,3,'color',.4);expect(out[16]).toBeLessThan(base[16]);expect(out).toHaveLength(data.length);expect(out[19]).toBe(255)});
 it('uses a JPEG for one image and ZIP for multiple images',()=>{expect(exportFilename('เอกสาร','images',1)).toBe('เอกสาร.jpg');expect(exportFilename('เอกสาร','images',2)).toBe('เอกสาร.zip')});
