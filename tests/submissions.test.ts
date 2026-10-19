@@ -1,0 +1,5 @@
+import {expect,it} from 'vitest';
+import {transitionSession} from '../features/grading/session';
+it('reading is review, never implicitly saved',()=>expect(transitionSession({status:'scanning'},{type:'read'})).toEqual({status:'review'}));
+it('failure retains review opportunity and only success advances',()=>{expect(transitionSession({status:'saving'},{type:'failure'}).status).toBe('error');expect(transitionSession({status:'review'},{type:'confirm'}).status).toBe('saving');expect(transitionSession({status:'saving'},{type:'success'}).status).toBe('saved')});
+it('retries a recovered request with its original mode and replacement version',async()=>{const {submissionPayload}=await import('../features/grading/session');const d={workspaceId:'w',examId:'e',studentId:'s',responses:[0 as const],submissionId:'request-1',expectedKeyRevision:1,mode:'replace' as const,replaceAttemptId:'a',expectedAttemptVersion:1};expect(submissionPayload(d,'initial',{id:'a',version:2})).toMatchObject({mode:'replace',expectedAttemptVersion:1,submissionId:'request-1'});expect(submissionPayload({...d,mode:'new'},'initial',{id:'a',version:2}).mode).toBe('new')});

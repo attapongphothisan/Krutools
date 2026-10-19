@@ -1,0 +1,2 @@
+import {database,hashToken} from '../../../server/access';import {json,failure} from '../../../server/http';
+export async function POST(){try{const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join(''),id=crypto.randomUUID();await database().prepare('INSERT INTO workspaces(id,token_hash,revision,created_at) VALUES(?,?,0,?)').bind(id,await hashToken(token),new Date().toISOString()).run();return json({workspaceId:id,token},201)}catch(e){return failure(e)}}

@@ -1,0 +1,4 @@
+import {DomainError} from './validation';
+export function json(data:unknown,status=200){return Response.json(data,{status,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}})}
+export function failure(error:unknown){if(error instanceof DomainError)return json({error:error.message,code:error.code},error.status);return json({error:'ไม่สามารถดำเนินการได้ กรุณาลองใหม่',code:'SERVER_ERROR'},500)}
+export async function readJson(request:Request){const declared=Number(request.headers.get('content-length')??0);if(declared>500000)throw new DomainError('ข้อมูลมีขนาดใหญ่เกินไป');const text=await request.text();if(text.length>500000)throw new DomainError('ข้อมูลมีขนาดใหญ่เกินไป');try{return JSON.parse(text)}catch{throw new DomainError('รูปแบบข้อมูลไม่ถูกต้อง')}}

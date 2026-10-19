@@ -1,0 +1,4 @@
+import {it,expect,vi,afterEach} from 'vitest';import {useToken,workspaceRequest,readToken} from '../features/workspace/client';
+afterEach(()=>vi.unstubAllGlobals());
+it('discards a response from the previous workspace after switching tokens',async()=>{vi.stubGlobal('localStorage',{setItem:()=>{},getItem:()=>null});let finish!:(r:Response)=>void;vi.stubGlobal('fetch',()=>new Promise<Response>(resolve=>{finish=resolve}));useToken('a'.repeat(64));const request=workspaceRequest();useToken('b'.repeat(64));finish(Response.json({workspaceId:'old'}));await expect(request).rejects.toMatchObject({code:'WORKSPACE_CHANGED'})});
+it('never falls back to a saved workspace for an invalid explicit link',()=>{vi.stubGlobal('localStorage',{getItem:()=> 'a'.repeat(64)});vi.stubGlobal('location',{hash:'#w=invalid'});expect(readToken()).toBe('')});

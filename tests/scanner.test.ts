@@ -1,0 +1,9 @@
+import {expect,it} from 'vitest';
+import {readSheet} from '../features/scanner/read';
+import {renderTestSheet} from './helpers/render-sheet';
+for(const paper of ['A4','A5'] as const) it(`reads pixels on ${paper}`,async()=>{const frame=await renderTestSheet(paper,60,Array.from({length:60},(_,i)=>i%4));const result=readSheet(frame,{examId:'exam-1',questionCount:60});expect(result).toMatchObject({status:'ready'});if(result.status==='ready')expect(result.responses).toEqual(Array.from({length:60},(_,i)=>i%4))});
+it('recognizes blanks and double marked responses',async()=>{const r=readSheet(await renderTestSheet('A5',3,[0,'blank','multiple']),{examId:'exam-1',questionCount:3});expect(r).toMatchObject({status:'ready'});if(r.status==='ready')expect(r.responses).toEqual([0,'blank','multiple'])});
+it('refuses the wrong exam',async()=>expect(readSheet(await renderTestSheet('A5',3,[0,1,2]),{examId:'different',questionCount:3}).status).toBe('retry'));
+it('refuses missing corner markers',async()=>{const f=await renderTestSheet('A5',3,[0,1,2]);for(let y=0;y<80;y++)for(let x=0;x<80;x++){const i=(y*f.width+x)*4;f.data[i]=f.data[i+1]=f.data[i+2]=255}expect(readSheet(f,{examId:'exam-1',questionCount:3}).status).toBe('retry')});
+it('reads a perspective transformed sheet with uneven lighting',async()=>{const {perspectiveSheet}=await import('./helpers/render-sheet');const r=readSheet(await perspectiveSheet(),{examId:'exam-1',questionCount:60});expect(r).toMatchObject({status:'ready'});if(r.status==='ready')expect(r.responses).toEqual(Array.from({length:60},(_,i)=>i%4))});
+it('refuses two A5 sheets in a single frame',async()=>{const f=await renderTestSheet('A5',3,[0,1,2]),data=new Uint8ClampedArray(f.data.length*2);data.set(f.data);data.set(f.data,f.data.length);const r=readSheet({data,width:f.width,height:f.height*2,colorSpace:'srgb'} as ImageData,{examId:'exam-1',questionCount:3});expect(r.status).toBe('retry')});
