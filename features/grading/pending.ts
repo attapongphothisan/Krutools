@@ -1,0 +1,6 @@
+import type {Response,SubmitInput} from './types';
+export type PendingDraft={workspaceId:string;examId:string;studentId:string;responses:Response[];submissionId:string;expectedKeyRevision:number;mode?:SubmitInput['mode'];replaceAttemptId?:string;expectedAttemptVersion?:number};
+function open(){return new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('kru-tools',1);r.onupgradeneeded=()=>r.result.createObjectStore('drafts');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+export async function loadPending(id:string){const db=await open();return new Promise<PendingDraft|null>((resolve,reject)=>{const t=db.transaction('drafts','readonly'),r=t.objectStore('drafts').get(id);r.onsuccess=()=>resolve(r.result??null);r.onerror=()=>reject(r.error);t.oncomplete=()=>db.close()})}
+export async function savePending(draft:PendingDraft){const db=await open();return new Promise<void>((resolve,reject)=>{const t=db.transaction('drafts','readwrite');t.objectStore('drafts').put(draft,draft.workspaceId);t.oncomplete=()=>{db.close();resolve()};t.onerror=()=>reject(t.error)})}
+export async function clearPending(id:string){const db=await open();return new Promise<void>((resolve,reject)=>{const t=db.transaction('drafts','readwrite');t.objectStore('drafts').delete(id);t.oncomplete=()=>{db.close();resolve()};t.onerror=()=>reject(t.error)})}

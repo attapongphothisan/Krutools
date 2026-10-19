@@ -1,0 +1,2 @@
+.print-host{display:none}.answer-sheet{display:block;max-width:none;background:white}.print-page{width:210mm;height:297mm;margin:0;background:white}
+@media print{@page{size:A4;margin:0}html,body{margin:0!important;padding:0!important;background:white!important}body>*{display:none!important}body>.print-host{display:block!important;position:absolute;top:0;left:0}.print-page{break-after:page;overflow:hidden}.answer-sheet{break-inside:avoid}}

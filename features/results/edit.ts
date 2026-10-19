@@ -1,0 +1,2 @@
+import type {Response,AttemptView,ExamDefinition} from '../grading/types';import {gradeAnswers} from '../grading/score';
+export function rebaseAttemptEdit(responses:Response[],fresh:{attempts:AttemptView[];exams:ExamDefinition[]},attemptId:string){const attempt=fresh.attempts.find(a=>a.id===attemptId),exam=fresh.exams.find(e=>e.id===attempt?.examId);if(!attempt||!exam)throw Error('ไม่พบผลตรวจนี้แล้ว กรุณาเปิดผลใหม่');return{attempt,exam,responses:[...responses],grade:gradeAnswers(responses,exam)}}
