@@ -1,5 +1,5 @@
-export type ImageMode='original'|'color'|'bw';
-export const imageModes=[{value:'original' as const,label:'ภาพเดิม'},{value:'color' as const,label:'สแกนสี'},{value:'bw' as const,label:'สแกนขาวดำ'}];
+export type ImageMode='original'|'bw';
+export const imageModes=[{value:'original' as const,label:'ภาพเดิม'},{value:'bw' as const,label:'สแกนขาวดำ'}];
 export function filterPixels(data:Uint8ClampedArray,width:number,height:number,mode:ImageMode,sharpness=0){
  const output=new Uint8ClampedArray(data);
  if(mode==='original')return output;
@@ -19,8 +19,7 @@ export function filterPixels(data:Uint8ClampedArray,width:number,height:number,m
   const a=y0*stride+x0,b=y0*stride+x1,c=y1*stride+x0,d=y1*stride+x1;
   const mean=(sum[d]-sum[b]-sum[c]+sum[a])/count,variance=Math.max(0,(squares[d]-squares[b]-squares[c]+squares[a])/count-mean*mean);
   const index=(y*width+x)*4;
-  if(mode==='color'){const background=Math.max(100,Math.min(255,mean+Math.sqrt(variance)*1.2)),gain=Math.min(2,255/background);for(let channel=0;channel<3;channel++)output[index+channel]=Math.max(0,Math.min(255,(output[index+channel]*gain-6)*1.025))}
-  else{const threshold=mean*(1+.22*(Math.sqrt(variance)/128-1)),value=gray[y*width+x]<=threshold?0:255;output[index]=output[index+1]=output[index+2]=value;}
+  const threshold=mean*(1+.22*(Math.sqrt(variance)/128-1)),value=gray[y*width+x]<=threshold?0:255;output[index]=output[index+1]=output[index+2]=value;
  }
  return output;
 }

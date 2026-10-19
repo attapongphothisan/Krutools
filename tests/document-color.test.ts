@@ -19,9 +19,4 @@ describe('document image modes',()=>{
  it('keeps uniform white paper white, including edge pixels',()=>{
   const source=new Uint8ClampedArray(12*8*4).fill(255);expect(filterPixels(source,12,8,'bw')).toEqual(source);
  });
- it('brightens shaded paper while preserving colored ink in color scan mode',()=>{
-  const w=100,h=80,source=new Uint8ClampedArray(w*h*4);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const color=y>35&&y<44&&x>40&&x<60;source.set(color?[160,25,30,255]:[140,145,150,255],(y*w+x)*4)}
-  const result=filterPixels(source,w,h,'color'),paper=(10*w+10)*4,red=(39*w+50)*4;expect(result[paper]).toBeGreaterThan(220);expect(result[red]).toBeGreaterThan(result[red+1]*3);expect(result[red+3]).toBe(255);
- });
-
 });
