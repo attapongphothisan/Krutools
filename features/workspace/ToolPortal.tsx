@@ -1,7 +1,7 @@
 'use client';
 import {assetPath} from './assets';
 import './tool-portal.css';
-export function ToolPortal({onOpen,onOpenPdfMerge,onOpenQrCode,loading,error}:{onOpen:()=>void;onOpenPdfMerge:()=>void;onOpenQrCode:()=>void;loading:boolean;error:string}) {
+export function ToolPortal({onOpen,onOpenPdfMerge,onOpenPdfToWord,onOpenQrCode,loading,error}:{onOpen:()=>void;onOpenPdfMerge:()=>void;onOpenPdfToWord:()=>void;onOpenQrCode:()=>void;loading:boolean;error:string}) {
  return <main className="tool-portal">
   <header className="portal-header"><div className="portal-brand"><img className="portal-brand-logo" src={assetPath('tool-images/site-logo.png')} alt="โลโก้เครื่องมือครู" width="48" height="48"/><div><strong>เครื่องมือครู</strong><small>จัดการงานสอนให้เป็นเรื่องง่าย</small></div></div><span className="portal-header-note">พื้นที่ทำงานสำหรับครู</span></header>
   <section className="portal-content">
@@ -12,6 +12,9 @@ export function ToolPortal({onOpen,onOpenPdfMerge,onOpenQrCode,loading,error}:{o
    </button>
    <button type="button" className="portal-tool-card" onClick={onOpenPdfMerge} aria-label="เปิดเครื่องมือรวม PDF">
     <img src={assetPath('tool-images/pdf-merge-tool.svg')} alt="" width="1254" height="1254"/>
+   </button>
+   <button type="button" className="portal-tool-card" onClick={onOpenPdfToWord} aria-label="เปิดเครื่องมือแปลง PDF เป็น Word">
+    <img src={assetPath('tool-images/pdf-to-word-tool.svg')} alt="" width="1254" height="1254"/>
    </button>
    <button type="button" className="portal-tool-card" onClick={onOpenQrCode} aria-label="เปิดเครื่องมือสร้าง QR Code">
     <img src={assetPath('tool-images/qr-code-tool.svg')} alt="" width="1254" height="1254"/>
