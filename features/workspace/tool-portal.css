@@ -1,0 +1,5 @@
+.tool-portal .portal-tools-grid{display:flex;align-items:stretch;justify-content:center;gap:18px;overflow-x:auto;overscroll-behavior-inline:contain;padding:4px 4px 14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.tool-portal .portal-tools-grid .portal-tool-card{flex:0 0 210px;width:210px;aspect-ratio:1;margin:0;padding:0;overflow:hidden;border:0;border-radius:16px;background:transparent;scroll-snap-align:start}
+.tool-portal .portal-tools-grid .portal-tool-card img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.tool-portal .portal-tools-grid .portal-tool-card:focus-visible,.tool-portal .portal-tools-grid:focus-visible{outline:3px solid #93c5fd;outline-offset:3px}
+@media(max-width:760px){.tool-portal .portal-tools-grid{justify-content:flex-start;gap:12px;margin-top:22px;padding-inline:2px 16px}.tool-portal .portal-tools-grid .portal-tool-card{flex-basis:150px;width:150px;border-radius:14px}}
