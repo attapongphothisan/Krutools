@@ -4,6 +4,7 @@ import {Download,LoaderCircle,Plus,FileText,Check} from 'lucide-react';
 import {ToolPortal} from './ToolPortal';
 import {AnswerWorkflow,answerSteps,type AnswerStep} from './AnswerWorkflow';
 import {DocumentScanner} from '../document-scanner/DocumentScanner';
+import {QRCodeTool} from './QRCodeTool';
 import {ExamPanel} from '../exams/ExamPanel';
 import {ClassroomPanel} from '../roster/ClassroomPanel';
 import {ExamEditor} from '../exams/ExamEditor';
@@ -13,7 +14,7 @@ import {PrintSheets} from '../paper/PaperSheet';
 import {Dialog,type Change} from '../ui';
 import type {ExamDefinition,PaperSize,WorkspaceData} from '../grading/types';
 import {useToken as setWorkspaceToken,readToken,workspaceRequest,createWorkspace,requestPersistentStorage} from './client';
-type Tool='answer-sheet'|'document-scanner';
+type Tool='answer-sheet'|'document-scanner'|'qr-code';
 const idle:GradingActivity={reviewing:false,busy:false,camera:false};
 export default function TeacherApp(){
  const activationTick=useRef(0);
@@ -55,7 +56,8 @@ export default function TeacherApp(){
  if(tab==='grading'){nextLabel='ดูสรุปคะแนน';hint='ตรวจคะแนนได้ทันที เลือกรายชื่อเฉพาะเมื่อต้องการบันทึกคะแนน'}
  if(tab==='results'){nextLabel='กลับไปตรวจคำตอบ';hint='เลือกส่งออก Excel เพื่อเก็บผลคะแนนไว้ใช้งานต่อ'}
  if(activeTool==='document-scanner')return <DocumentScanner onBack={()=>{setActiveTool(null);window.scrollTo({top:0})}}/>;
- if(!activeTool)return <ToolPortal onOpen={openTool} onOpenDocumentScanner={()=>setActiveTool('document-scanner')} loading={loading} error={error}/>;
+ if(activeTool==='qr-code')return <QRCodeTool onBack={()=>{setActiveTool(null);window.scrollTo({top:0})}}/>;
+ if(!activeTool)return <ToolPortal onOpen={openTool} onOpenDocumentScanner={()=>setActiveTool('document-scanner')} onOpenQrCode={()=>setActiveTool('qr-code')} loading={loading} error={error}/>;
  return <>
  <AnswerWorkflow step={tab} onStep={go} onBack={backToTools} previous={index?`กลับ: ${answerSteps[index-1].label}`:'หน้าเลือกเครื่องมือ'} onPrevious={()=>index?go(answerSteps[index-1].id):backToTools()} nextLabel={nextLabel} onNext={next} nextDisabled={nextDisabled||loading||starting||!data} hint={hint} locked={activity.busy} examName={exam?.title} roomName={room?.name} completed={{exams:!!exam&&exam.keyReady!==false,classrooms:students.length>0,grading:students.length>0&&graded===students.length,results:false}}>
  {loading||starting?<div className="loading-state"><LoaderCircle size={28} className="spin"/><p>กำลังเปิดเครื่องมือ…</p></div>:!data?<div className="answer-prerequisite"><h2>เปิดพื้นที่เครื่องมือกระดาษคำตอบ</h2><p>{error||'เริ่มสร้างชุดสอบและเพิ่มรายชื่อได้ทันที'}</p><button type="button" className="button" onClick={()=>void start()}><Plus size={18}/>ลองเปิดอีกครั้ง</button></div>:<>
