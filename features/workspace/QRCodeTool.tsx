@@ -14,7 +14,7 @@ export function QRCodeTool({onBack}:{onBack:()=>void}){
   catch{setError('สร้าง QR Code ไม่สำเร็จ กรุณาตรวจข้อความหรือลิงก์แล้วลองอีกครั้ง');setImage('')}
   finally{setBusy(false)}
  }
- function download(){if(!image)return;const link=document.createElement('a');link.href=image;link.download='qr-code.png';document.body.append(link);link.click();link.remove()}
+ function download(){if(!image)return;const link=document.createElement('a');link.href=image;link.download='qr-code.png';document.body.appendChild(link);link.click();link.remove()}
  return <main className="qr-tool">
   <header className="qr-tool-header"><button type="button" className="document-back" onClick={onBack}><ArrowLeft size={18}/>หน้าเลือกเครื่องมือ</button><span><QrCode size={17}/>เครื่องมือครู</span></header>
   <section className="qr-tool-content">
