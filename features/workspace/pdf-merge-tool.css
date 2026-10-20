@@ -1,0 +1,43 @@
+.pdf-merge{min-height:100dvh;background:var(--bg);color:var(--text)}
+.pdf-merge-header{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:82px;padding:16px clamp(22px,6vw,88px);background:#fff;border-bottom:1px solid var(--line)}
+.pdf-merge-header>span{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px}
+.pdf-merge-content{width:min(100%,820px);margin:auto;padding:44px 24px}
+.pdf-merge-heading{text-align:center}
+.pdf-merge-heading h1{font-size:30px;margin:8px 0 12px}
+.pdf-merge-heading h1:focus{outline:none}
+.pdf-merge-heading p{color:var(--muted);font-size:14px}
+.pdf-merge-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:30px 0;padding:0;list-style:none}
+.pdf-merge-steps li{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:12px}
+.pdf-merge-steps li span{display:grid;place-items:center;width:27px;height:27px;border:1px solid var(--line);border-radius:50%;font-size:12px}
+.pdf-merge-steps li[aria-current=step]{color:var(--green);font-weight:600}
+.pdf-merge-steps li[aria-current=step] span{border-color:var(--green);background:#eff6ff;color:var(--green)}
+.pdf-merge-drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:225px;padding:28px;border:1.5px dashed #94a3b8;border-radius:16px;background:#fff;color:var(--green);text-align:center;transition:border-color .15s,background .15s}
+.pdf-merge-drop>strong{font-size:16px;color:var(--ink)}
+.pdf-merge-drop>span{font-size:13px;color:var(--muted)}
+.pdf-merge-drop>.button{margin-top:5px}
+.pdf-merge-drop-active{border-color:#2563eb;background:#eff6ff}
+.pdf-merge-error{margin:14px 0 0;padding:12px 14px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#b91c1c;font-size:13px;line-height:1.6}
+.pdf-merge-list{margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.pdf-merge-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.pdf-merge-list-heading h2{font-size:16px}
+.pdf-merge-list-heading h2 span{margin-left:6px;color:var(--muted);font-size:12px;font-weight:400}
+.pdf-merge-list-heading .document-back{min-height:36px;font-size:12px}
+.pdf-merge-list ol{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.pdf-merge-list li{display:flex;align-items:center;gap:10px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.pdf-merge-list li[draggable=true]{cursor:grab}
+.pdf-merge-list li[draggable=true]:active{cursor:grabbing}
+.pdf-merge-order{display:grid;place-items:center;flex:0 0 24px;height:24px;border-radius:50%;background:#eff6ff;color:var(--green);font-size:12px;font-weight:600}
+.pdf-merge-grip{flex:0 0 auto;color:#94a3b8}
+.pdf-merge-file-icon{flex:0 0 auto;color:#2563eb}
+.pdf-merge-file-info{display:grid;min-width:0;flex:1;gap:4px}
+.pdf-merge-file-info strong{overflow:hidden;color:var(--ink);font-size:13px;font-weight:550;text-overflow:ellipsis;white-space:nowrap}
+.pdf-merge-file-info small{color:var(--muted);font-size:11px}
+.pdf-merge-row-actions{display:flex;flex:0 0 auto;align-items:center;gap:2px}
+.pdf-merge-row-actions .document-back{min-height:34px;width:34px;justify-content:center;padding:0}
+.pdf-merge-remove{color:#b91c1c}
+.pdf-merge-hint,.pdf-merge-note{margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.7}
+.pdf-merge-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.pdf-merge-status{display:flex;align-items:center;gap:7px;min-height:22px;margin:0;color:var(--green);font-size:12px}
+.pdf-merge-footer>.button{flex:0 0 auto;min-height:44px}
+.pdf-merge-note{margin-top:22px;text-align:center}
+@media(max-width:600px){.pdf-merge-header{min-height:72px;gap:8px;padding:12px 16px}.pdf-merge-header>span{font-size:11px}.pdf-merge-content{padding:30px 18px}.pdf-merge-heading h1{font-size:25px}.pdf-merge-heading p{font-size:13px}.pdf-merge-steps{gap:2px;margin:24px 0}.pdf-merge-steps li{gap:5px;font-size:11px}.pdf-merge-steps li span{width:24px;height:24px}.pdf-merge-drop{min-height:200px;padding:22px 14px}.pdf-merge-list{padding:14px}.pdf-merge-list li{gap:7px;padding:9px 7px}.pdf-merge-grip{width:14px}.pdf-merge-row-actions .document-back{width:30px;min-height:32px}.pdf-merge-footer{align-items:stretch;flex-direction:column}.pdf-merge-footer>.button{width:100%;justify-content:center}.pdf-merge-status{justify-content:center;text-align:center}}
