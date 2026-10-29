@@ -1,13 +1,16 @@
 import type {WorkspaceData} from '../grading/types';
 import {applyCommand,emptyState,toView,type DomainState} from '../../server/domain';
 
-const APP_SCOPE=location.pathname.split('/').filter(Boolean)[0]??'root';
-const DATABASE=`kru-tools-local-${APP_SCOPE}`, STORE='workspace', KEY='primary';
+function databaseName(){
+ const scope=typeof location==='undefined'?'root':location.pathname.split('/').filter(Boolean)[0]??'root';
+ return `kru-tools-local-${scope}`;
+}
+const STORE='workspace', KEY='primary';
 let activeToken='';
 
 function openDatabase():Promise<IDBDatabase>{
  return new Promise((resolve,reject)=>{
-  const request=indexedDB.open(DATABASE,1);
+  const request=indexedDB.open(databaseName(),1);
   request.onupgradeneeded=()=>request.result.createObjectStore(STORE);
   request.onsuccess=()=>resolve(request.result);
   request.onerror=()=>reject(request.error??new Error('เปิดพื้นที่เก็บข้อมูลในเครื่องไม่สำเร็จ'));
@@ -36,7 +39,7 @@ export async function workspaceRequest(command?:{action:string;payload:unknown})
   if(command){try{applyCommand(state,command)}catch(error){tx.abort();throw error}}
   tx.objectStore(STORE).put(state,KEY);
   await new Promise<void>((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error??new Error('บันทึกข้อมูลในเครื่องไม่สำเร็จ'));tx.onerror=()=>reject(tx.error??new Error('บันทึกข้อมูลในเครื่องไม่สำเร็จ'))});
-  return {...toView(state),workspaceId:DATABASE};
+  return {...toView(state),workspaceId:databaseName()};
  }catch(error){
   if(error instanceof Error)throw error;
   throw new ApiError('บันทึกข้อมูลในเครื่องไม่สำเร็จ','LOCAL_STORAGE_ERROR');
@@ -49,7 +52,7 @@ export async function createWorkspace(){
  const db=await openDatabase();
  try{const tx=db.transaction(STORE,'readwrite');const store=tx.objectStore(STORE);const request=store.get(KEY);request.onsuccess=()=>{if(!request.result)store.put(emptyState(),KEY)};await new Promise<void>((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error??new Error('สร้างพื้นที่เก็บข้อมูลไม่สำเร็จ'));tx.onerror=()=>reject(tx.error??new Error('สร้างพื้นที่เก็บข้อมูลไม่สำเร็จ'))});}
  finally{db.close()}
- return {workspaceId:DATABASE,token};
+ return {workspaceId:databaseName(),token};
 }
 
 export async function requestPersistentStorage(){
