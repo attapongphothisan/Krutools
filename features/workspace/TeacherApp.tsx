@@ -1,10 +1,7 @@
 'use client';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {Download,LoaderCircle,Plus,FileText,Check} from 'lucide-react';
-import {ToolPortal} from './ToolPortal';
 import {AnswerWorkflow,answerSteps,type AnswerStep} from './AnswerWorkflow';
-import {PdfMergeTool} from './PdfMergeTool';
-import {QRCodeTool} from './QRCodeTool';
 import {ExamPanel} from '../exams/ExamPanel';
 import {ClassroomPanel} from '../roster/ClassroomPanel';
 import {ExamEditor} from '../exams/ExamEditor';
@@ -14,11 +11,10 @@ import {PrintSheets} from '../paper/PaperSheet';
 import {Dialog,type Change} from '../ui';
 import type {ExamDefinition,PaperSize,WorkspaceData} from '../grading/types';
 import {useToken as setWorkspaceToken,readToken,workspaceRequest,createWorkspace,requestPersistentStorage} from './client';
-type Tool='answer-sheet'|'pdf-merge'|'qr-code';
 const idle:GradingActivity={reviewing:false,busy:false,camera:false};
 export default function TeacherApp(){
  const activationTick=useRef(0);
- const[data,setData]=useState<WorkspaceData|null>(null),[loading,setLoading]=useState(true),[activeTool,setActiveTool]=useState<Tool|null>(null),[error,setError]=useState(''),[tab,setTab]=useState<AnswerStep>('exams'),[editing,setEditing]=useState<ExamDefinition|true|null>(null),[printExam,setPrintExam]=useState<ExamDefinition|null>(null),[paper,setPaper]=useState<PaperSize>('A4'),[starting,setStarting]=useState(false);
+ const[data,setData]=useState<WorkspaceData|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[tab,setTab]=useState<AnswerStep>('exams'),[editing,setEditing]=useState<ExamDefinition|true|null>(null),[printExam,setPrintExam]=useState<ExamDefinition|null>(null),[paper,setPaper]=useState<PaperSize>('A4'),[starting,setStarting]=useState(false);
  const[examId,setExamId]=useState(''),[roomId,setRoomId]=useState(''),[studentId,setStudentId]=useState(''),[activity,setActivity]=useState<GradingActivity>(idle),[pendingNavigation,setPendingNavigation]=useState<(()=>void)|null>(null);
  const exam=data?.exams.find(item=>item.id===examId)??data?.exams[0],room=data?.classrooms.find(item=>item.id===roomId)??data?.classrooms[0];
  const students=data?.students.filter(item=>item.classroomId===room?.id)??[],graded=exam?students.filter(student=>data?.currentResults[`${exam.id}:${student.id}`]).length:0;
@@ -31,12 +27,10 @@ export default function TeacherApp(){
  };
  const selectContext=useCallback((nextExam:string,nextRoom:string)=>{setExamId(nextExam);setRoomId(nextRoom)},[]);
  const selectGradingContext=useCallback((nextExam:string,nextRoom:string,nextStudent:string)=>{setExamId(nextExam);setRoomId(nextRoom);setStudentId(nextStudent)},[]);
- useEffect(()=>{let live=true;const activate=async()=>{const tick=++activationTick.current,token=readToken();setWorkspaceToken(token);if(!token){setLoading(false);return}try{const fresh=await workspaceRequest();if(live&&tick===activationTick.current)setData(fresh)}catch(e){if(live)setError((e as Error).message)}finally{if(live)setLoading(false)}};void activate();void requestPersistentStorage();return()=>{live=false}},[]);
+ useEffect(()=>{let live=true;const activate=async()=>{const tick=++activationTick.current,token=readToken();try{if(token)setWorkspaceToken(token);else{const workspace=await createWorkspace();setWorkspaceToken(workspace.token)}const fresh=await workspaceRequest();if(live&&tick===activationTick.current)setData(fresh)}catch(e){if(live)setError((e as Error).message)}finally{if(live)setLoading(false)}};void activate();void requestPersistentStorage();return()=>{live=false}},[]);
  async function start(){if(starting)return;setStarting(true);setError('');try{const w=await createWorkspace();setWorkspaceToken(w.token);await refresh()}catch(e){setError((e as Error).message)}finally{setStarting(false)}}
- function openTool(){setActiveTool('answer-sheet');setTab('exams');setActivity(idle);if(!data&&!loading)void start()}
  function navigate(action:()=>void){if(activity.busy)return;if(tab==='grading'&&(activity.reviewing||activity.camera)){setPendingNavigation(()=>action);return}setActivity(idle);action()}
  function go(to:AnswerStep){if(to===tab)return;navigate(()=>{setTab(to);window.scrollTo({top:0})})}
- function backToTools(){navigate(()=>{setActiveTool(null);setTab('exams');window.scrollTo({top:0})})}
  async function saveAnswerSheetPdf(){if(!printExam||pdfBusy)return;setPdfBusy(true);setPdfError('');try{const {downloadAnswerPdf}=await import('../paper/download');await downloadAnswerPdf(printExam,paper)}catch(e){setPdfError((e as Error).message)}finally{setPdfBusy(false)}}
  async function downloadDefaultAnswerPdf(value:ExamDefinition){if(pdfBusy)return;setPdfBusy(true);setPdfError('');try{const {downloadAnswerPdf}=await import('../paper/download');await downloadAnswerPdf(value,'A4')}catch(e){setPrintExam(value);setPaper('A4');setPdfError((e as Error).message)}finally{setPdfBusy(false)}}
 
@@ -55,11 +49,8 @@ export default function TeacherApp(){
  }
  if(tab==='grading'){nextLabel='ดูสรุปคะแนน';hint='ตรวจคะแนนได้ทันที เลือกรายชื่อเฉพาะเมื่อต้องการบันทึกคะแนน'}
  if(tab==='results'){nextLabel='กลับไปตรวจคำตอบ';hint='เลือกส่งออก Excel เพื่อเก็บผลคะแนนไว้ใช้งานต่อ'}
- if(activeTool==='pdf-merge')return <PdfMergeTool onBack={()=>{setActiveTool(null);window.scrollTo({top:0})}}/>;
- if(activeTool==='qr-code')return <QRCodeTool onBack={()=>{setActiveTool(null);window.scrollTo({top:0})}}/>;
- if(!activeTool)return <ToolPortal onOpen={openTool} onOpenPdfMerge={()=>setActiveTool('pdf-merge')} onOpenQrCode={()=>setActiveTool('qr-code')} loading={loading} error={error}/>;
  return <>
- <AnswerWorkflow step={tab} onStep={go} onBack={backToTools} previous={index?`กลับ: ${answerSteps[index-1].label}`:'หน้าเลือกเครื่องมือ'} onPrevious={()=>index?go(answerSteps[index-1].id):backToTools()} nextLabel={nextLabel} onNext={next} nextDisabled={nextDisabled||loading||starting||!data} hint={hint} locked={activity.busy} examName={exam?.title} roomName={room?.name} completed={{exams:!!exam&&exam.keyReady!==false,classrooms:students.length>0,grading:students.length>0&&graded===students.length,results:false}}>
+ <AnswerWorkflow step={tab} onStep={go} previous={index?`กลับ: ${answerSteps[index-1].label}`:undefined} onPrevious={()=>{if(index)go(answerSteps[index-1].id)}} nextLabel={nextLabel} onNext={next} nextDisabled={nextDisabled||loading||starting||!data} hint={hint} locked={activity.busy} examName={exam?.title} roomName={room?.name} completed={{exams:!!exam&&exam.keyReady!==false,classrooms:students.length>0,grading:students.length>0&&graded===students.length,results:false}}>
  {loading||starting?<div className="loading-state"><LoaderCircle size={28} className="spin"/><p>กำลังเปิดเครื่องมือ…</p></div>:!data?<div className="answer-prerequisite"><h2>เปิดพื้นที่เครื่องมือกระดาษคำตอบ</h2><p>{error||'เริ่มสร้างชุดสอบและเพิ่มรายชื่อได้ทันที'}</p><button type="button" className="button" onClick={()=>void start()}><Plus size={18}/>ลองเปิดอีกครั้ง</button></div>:<>
  {tab==='exams'&&<ExamPanel data={data} selectedId={exam?.id??''} onSelect={setExamId} onEdit={setEditing} onPrint={value=>{setPrintExam(value);setPaper('A4');setPdfError('')}} onDownload={value=>void downloadDefaultAnswerPdf(value)} onDelete={value=>{setError('');setDeleting(value)}}/>}
  {tab==='classrooms'&&<ClassroomPanel data={data} onChange={change} selectedRoomId={room?.id} onSelectRoom={setRoomId} embedded/>}
